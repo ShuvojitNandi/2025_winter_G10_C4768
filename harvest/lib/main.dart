@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'auth_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-
+import 'view/vendor_home.dart'; // snandi*
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -35,8 +35,8 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: AuthGate(),
+      //theme: ThemeData.dark(),
+      home: VendorHomePage(),
     );
   }
 }
