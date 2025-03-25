@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../controllers/vendor_service.dart';
+import '../model/vendor_model.dart';
+import 'adding_category_product.dart';
 
 class VendorHomePage extends StatefulWidget {
   const VendorHomePage({super.key});
@@ -8,28 +12,78 @@ class VendorHomePage extends StatefulWidget {
 }
 
 class _VendorHomePageState extends State<VendorHomePage> {
-  late List<String> _categories = ['Fruits','Vegetables','Nuts','seeds'];
-  late Map<String, List<String>> categoriesAndItems = {
-    'Fruits': ['Apple', 'Banana', 'Orange', 'Grapes'],
-    'Vegetables': ['Carrot', 'Broccoli', 'Spinach'],
-    'Nuts': ['Laptop', 'Smartphone', 'Tablet', 'Headphones', 'Keyboard'],
-    'seeds': ['Fiction', 'Non-Fiction', 'Science Fiction'],
-  };
-  late PageController _pageController = PageController();
-  int _currentPage = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+
+  final _categoryService = CategoryService();
+  final _productService = ProductService();
+  String? _selectedCategoryId;
+  List<Product> _products = [];
 
   @override
   void initState() {
-    _pageController.addListener(() {
-      setState(() {
-        _currentPage = _pageController.page?.round() ?? 0;
-      });
+    super.initState();
+    _selectedCategoryId = null; // Initialize to null
+  }
+
+  Future<void> _fetchProductsByCategory(String categoryId) async {
+
+
+    _productService.getProducts().listen((products) {
+      if (mounted) {
+        setState(() {
+          _products = products.where((product) => product.categoryId == categoryId).toList();
+        });
+      }
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Haricot Farms')),
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text('Haricot Farms'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
+          ),
+        ],
+      ),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            Container(
+              height: 80,
+              child: DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                ),
+                child: Text('Options',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text('product manager.'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CategoryProductManager()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -120,51 +174,56 @@ class _VendorHomePageState extends State<VendorHomePage> {
                   ),
                 ),
               ),
-              SizedBox(
-                height: 50,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    return Center(
-                      child: Text(
-                        _categories[index],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
+              
+              StreamBuilder<List<Category>>(
+                stream:  _categoryService.getCategories(),
+                builder: (context, snapshot) {
+                  if(snapshot.hasData) {
+                    final categories = snapshot.data!;
+                    return DropdownButtonFormField<String>(
+                      value: _selectedCategoryId,
+                      items: categories.map((category){
+                        return DropdownMenuItem<String>(
+                          value: category.id,
+                          child: Text(category.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategoryId = value;
+                          if(value != null){
+                            _fetchProductsByCategory(value);
+                          }
+                        });
+                      },
+                      decoration: InputDecoration(labelText: 'Select Category'),
                     );
-                  },
-                ),
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                },
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _categories.length,
-                    (index) => Container(
-                      margin: EdgeInsets.symmetric(horizontal: 5),
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentPage == index ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                ),
-              ),
+              SizedBox(height: 16),
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: 200),
-                child: ListView.builder(
-                  itemCount: categoriesAndItems[_categories[_currentPage]]?.length ?? 0,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(categoriesAndItems[_categories[_currentPage]]?[index] ?? ''),
-                    );
-                  },
+                child: _selectedCategoryId == null
+                ? Center(child: Text('Select a category to view products.'))
+                    : _products.isEmpty
+                    ? Center(child: Text('No products in this category.'))
+                    : ListView.builder(
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          final product = _products[index];
+                          return ListTile(
+                            title: Text(product.name),
+                            subtitle: Text('Price: \$${product.price}'),
+
+                          );
+                        },
                 ),
               ),
-              SizedBox(height: 16)
             ],
           ),
         ),

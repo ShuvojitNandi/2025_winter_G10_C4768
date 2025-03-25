@@ -36,7 +36,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       //theme: ThemeData.dark(),
-      home: VendorHomePage(),
+      home: AuthGate(),
     );
   }
 }
