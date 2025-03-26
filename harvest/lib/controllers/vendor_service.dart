@@ -101,3 +101,27 @@ class ProductService {
     });
   }
 }
+
+class StoreService {
+  final user = FirebaseAuth.instance.currentUser;
+  final CollectionReference storeCollection;
+
+  StoreService()
+          : storeCollection = FirebaseFirestore.instance
+              .collection('vendors');
+
+  Future<DocumentReference<Object?>> addStore(Stores store) async {
+    return await storeCollection.add(store.toMap());
+  }
+
+  Future<void> deleteStore(String id) async {
+    return await storeCollection.doc(id).delete();
+  }
+
+  Stream<List<Stores>> getStores() {
+    return storeCollection.snapshots().map((snapshot) {
+      List<Stores> stores = snapshot.docs.map((doc) => Stores.fromMap(doc)).toList();
+      return stores;
+    });
+  }
+}

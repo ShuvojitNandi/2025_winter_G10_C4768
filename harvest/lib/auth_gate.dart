@@ -4,6 +4,7 @@ import 'package:harvest/view/vendor_home.dart';
 import 'view/login_screen.dart'; // Screen for login/sign up
 import './view/home.dart';
 import 'view/adding_category_product.dart';
+import 'view/vendor_registration.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -19,7 +20,7 @@ class AuthGate extends StatelessWidget {
             title:
                 'Authenticated UID: ${FirebaseAuth.instance.currentUser!.uid}',
           );*/
-          return VendorHomePage();
+          return VendorRegistrationPage();
         }
         // If no user data is present, show the login screen
         return const LoginScreen();

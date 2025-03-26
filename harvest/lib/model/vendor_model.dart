@@ -115,3 +115,32 @@ class Product {
     );
   }
 }
+
+class Stores {
+  final String? id;
+  final String userId;
+  final String vendorId;
+
+  Stores({
+    this.id,
+    required this.userId,
+    required this.vendorId,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId' : userId,
+      'vendorId' : vendorId,
+    };
+  }
+
+  static Stores fromMap(DocumentSnapshot doc) {
+    Map<String, dynamic> map = doc.data() as Map<String, dynamic>;
+    return Stores(
+      id: doc.id,
+      userId: 'userId' ?? '',
+      vendorId: 'vendorId' ?? '',
+    );
+  }
+
+}
