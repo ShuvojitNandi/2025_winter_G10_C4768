@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../controller/user_controller.dart'; 
+import '../controller/user_controller.dart';
+import '../controller/firestore_service.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});
@@ -10,31 +14,50 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+
 class _MyHomePageState extends State<MyHomePage> {
   String? profileImageUrl;
   String? userName;
+  List<String> userShops = [];
 
   final UserController _userController = UserController();
+  final StorageService _storageService = StorageService();
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    _fetchUserName();
+    _fetchUserData();
   }
 
-  
-  Future<void> _fetchUserName() async {                                         // fetching user name ; considering all user have unique email
+
+  Future<void> _fetchUserData() async {
     if (widget.currentUser != null) {
       var user = await _userController.fetchUserDataByEmail(widget.currentUser!.email!);
       setState(() {
         userName = user?.name ?? widget.currentUser?.displayName;
+        profileImageUrl = user?.profileImageUrl;
+        userShops = user?.shops ?? [];
       });
     }
   }
 
-  Future<void> signout() async {
-    await FirebaseAuth.instance.signOut();
+
+  Future<void> _pickAndUploadImage() async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+      String downloadUrl = await _storageService.uploadProfilePicture(imageFile, widget.currentUser!.uid);
+      if (downloadUrl.isNotEmpty) {
+        setState(() {
+          profileImageUrl = downloadUrl;
+        });
+
+        await _userController.updateProfilePicture(widget.currentUser!.uid, downloadUrl);
+      }
+    }
   }
+
 
   void _showProfileDialog() {
     showDialog(
@@ -49,7 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: const Icon(Icons.upload),
                 label: const Text("Upload Picture"),
                 onPressed: () {
-                                                                          // ## IMPORTANT## will implement image upload logic later
+                  Navigator.pop(context);
+                  _pickAndUploadImage();
                 },
               ),
               TextButton.icon(
@@ -59,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     profileImageUrl = null;
                   });
+                  _userController.updateProfilePicture(widget.currentUser!.uid, '');
                   Navigator.pop(context);
                 },
               ),
@@ -68,6 +93,12 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
+
+
+  Future<void> signout() async {
+    await FirebaseAuth.instance.signOut();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -90,10 +121,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   onTap: _showProfileDialog,
                   child: CircleAvatar(
                     radius: 30,
-                    backgroundImage: profileImageUrl != null
+                    backgroundImage: profileImageUrl != null && profileImageUrl!.isNotEmpty
                         ? NetworkImage(profileImageUrl!)
                         : null,
-                    child: profileImageUrl == null
+                    child: (profileImageUrl == null || profileImageUrl!.isEmpty)
                         ? const Icon(Icons.person, size: 30)
                         : null,
                   ),
@@ -109,25 +140,29 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
             const SizedBox(height: 20),
+            Text("Your Shops:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.2,
-                ),
-                itemCount: 4,                                                   // #### IMPORTANT ###### implemt shop tile logic 
-                itemBuilder: (context, index) {
-                  return Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              child: userShops.isEmpty
+                  ? Center(child: Text("No shops added yet"))
+                  : GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.2,
+                      ),
+                      itemCount: userShops.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(child: Text(userShops[index])),
+                        );
+                      },
                     ),
-                    child: Center(child: Text("Shop ${index + 1}")),
-                  );
-                },
-              ),
             ),
           ],
         ),

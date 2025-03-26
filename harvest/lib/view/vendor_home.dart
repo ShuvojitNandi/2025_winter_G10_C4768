@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../controllers/vendor_service.dart';
+import '../controller/vendor_service.dart';
 import '../model/vendor_model.dart';
 import 'adding_category_product.dart';
 
@@ -57,7 +57,7 @@ class _VendorHomePageState extends State<VendorHomePage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            Container(
+            SizedBox(
               height: 80,
               child: DrawerHeader(
                 decoration: BoxDecoration(

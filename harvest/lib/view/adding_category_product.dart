@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../model/vendor_model.dart';
-import '../controllers/vendor_service.dart';
+import '../controller/vendor_service.dart';
 class CategoryProductManager extends StatefulWidget {
+  const CategoryProductManager({super.key});
+
   @override
   _CategoryProductManagerState createState() => _CategoryProductManagerState();
 
