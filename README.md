@@ -1,5 +1,5 @@
 ## What is changed from Vendor_home_page branch
-1. Rather than saving the vendor details unnder Users collections, we now have 3 collections:
+1. Rather than saving the vendor details under Users collections, we now have 3 collections:
   - users
   - vendors
   - products
