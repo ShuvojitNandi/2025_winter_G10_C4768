@@ -11,6 +11,7 @@ import '../controller/user_controller.dart';
 import '../view/vendor_home.dart';
 import 'vendor_registration.dart';
 
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});
   final User? currentUser;
@@ -28,13 +29,15 @@ class _MyHomePageState extends State<MyHomePage> {
   final StorageService _storageService = StorageService();
   final ImagePicker _picker = ImagePicker();
   final VendorService _vendorService =
-      VendorService(); // For fetching vendor info
+      VendorService();
+
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
   }
+
 
   Future<void> _fetchUserData() async {
     if (widget.currentUser != null) {
@@ -46,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
+
 
   Future<void> _pickAndUploadImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -60,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
   }
+
 
   void _showProfileDialog() {
     showDialog(
@@ -96,11 +101,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+
   Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
   }
 
-  // Build vendor tile using Container widgets
+
   Widget _buildVendorTile(String vendorId) {
     return StreamBuilder<Vendor?>(
       stream: _vendorService.getVendor(vendorId),
@@ -137,7 +143,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             child: Column(
               children: [
-                // Container for the store image
                 Container(
                   height: 120,
                   width: double.infinity,
@@ -174,11 +179,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 168, 144, 209), // Deep purple app bar
+        backgroundColor: const Color.fromARGB(255, 168, 144, 209), 
         title: Text("Welcome ${userName ?? 'User'}"),
         actions: [
           IconButton(onPressed: signout, icon: const Icon(Icons.logout)),

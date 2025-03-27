@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../model/user_model.dart';
 
+
 class UserController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? get currentUserId => _auth.currentUser?.uid;
+
 
   Future<UserModel?> fetchUserDataByEmail(String email) async {
     if (email.isEmpty) return null;
@@ -24,6 +26,7 @@ class UserController {
     return null;
   }
 
+
   Future<void> updateProfilePicture(String userId, String imageUrl) async {
     try {
       await _firestore.collection('users').doc(userId).update({
@@ -34,6 +37,7 @@ class UserController {
     }
   }
 
+
   Future<void> addUser(String uid, String name, String email) async {
     try {
       await _firestore.collection('users').doc(uid).set({
@@ -42,17 +46,18 @@ class UserController {
         'email': email,
         'profileImageUrl': '',
         'createdAt': FieldValue.serverTimestamp(),
-        'shops': [], // Initialize shops as an empty list
+        'shops': [], 
       });
     } catch (e) {
       print("Error adding user: $e");
     }
   }
 
+
   Future<void> addShopToUser(String userId, String shopId) async {
     try {
       await _firestore.collection('users').doc(userId).update({
-        'shops': FieldValue.arrayUnion([shopId]), // Add shop ID to the shops list
+        'shops': FieldValue.arrayUnion([shopId]), 
       });
     } catch (e) {
       print("Error adding shop to user: $e");
