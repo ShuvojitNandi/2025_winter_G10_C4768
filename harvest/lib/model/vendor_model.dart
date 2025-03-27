@@ -89,19 +89,18 @@ class Product {
   final String? id;
   final String name;
   final String categoryId;
-  final double price;
+  
   Product({
     this.id,
     required this.name,
     required this.categoryId,
-    required this.price,
+  
   });
 
   Map<String, dynamic> toMap() {
     return{
       'name': name,
       'categoryId': categoryId,
-      'price': price,
     };
   }
 
@@ -111,36 +110,6 @@ class Product {
       id: doc.id,
       name: map['name'] ?? '',
       categoryId: map['categoryId'] ?? '',
-      price: (map['price'] ?? 0.0).toDouble(),
     );
   }
-}
-
-class Stores {
-  final String? id;
-  final String userId;
-  final String vendorId;
-
-  Stores({
-    this.id,
-    required this.userId,
-    required this.vendorId,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'userId' : userId,
-      'vendorId' : vendorId,
-    };
-  }
-
-  static Stores fromMap(DocumentSnapshot doc) {
-    Map<String, dynamic> map = doc.data() as Map<String, dynamic>;
-    return Stores(
-      id: doc.id,
-      userId: 'userId' ?? '',
-      vendorId: 'vendorId' ?? '',
-    );
-  }
-
 }

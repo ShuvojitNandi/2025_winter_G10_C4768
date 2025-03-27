@@ -92,9 +92,8 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
                     final product = Product(
                       name: _productNameController.text,
                       categoryId: _selectedCategoryId!,
-                      price: double.tryParse(_productPriceController.text) ?? 0.0,
                     );
-                    await _productService.addProducts(product);
+                    await _productService.addProduct(product);
                     _productNameController.clear();
                     _productPriceController.clear();
 

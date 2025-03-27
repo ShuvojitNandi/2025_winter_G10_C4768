@@ -218,7 +218,7 @@ class _VendorHomePageState extends State<VendorHomePage> {
                           final product = _products[index];
                           return ListTile(
                             title: Text(product.name),
-                            subtitle: Text('Price: \$${product.price}'),
+                  
 
                           );
                         },
