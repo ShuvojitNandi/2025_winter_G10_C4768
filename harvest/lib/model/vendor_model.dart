@@ -113,3 +113,41 @@ class Product {
     );
   }
 }
+
+
+// sub collection to store vendor specific products 
+class VendorProduct {
+  final String? id;
+  final String productId;                         //this will refernce the global product id 
+  final double price;
+  final int quantity;
+  final bool isAvailable;
+
+  VendorProduct({
+    this.id,
+    required this.productId,
+    required this.price,
+    required this.quantity,
+    required this.isAvailable,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'productId': productId,
+      'price': price,
+      'quantity': quantity,
+      'isAvailable': isAvailable,
+    };
+  }
+
+  static VendorProduct fromMap(DocumentSnapshot doc) {
+    Map<String, dynamic> map = doc.data() as Map<String, dynamic>;
+    return VendorProduct(
+      id: doc.id,
+      productId: map['productId'] ?? '',
+      price: (map['price'] ?? 0).toDouble(),
+      quantity: map['quantity'] ?? 0,
+      isAvailable: map['isAvailable'] ?? true,
+    );
+  }
+}

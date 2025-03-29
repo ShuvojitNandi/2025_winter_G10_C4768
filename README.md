@@ -50,3 +50,32 @@ By storing the vendor IDs in the shops array, the app can quickly display the st
 
 
 ###  In the future, the vendor document will include a field 'products' (dynamic list, like python dictionary) that maps a product ID to vendor-specific details like price and available quantity
+
+
+
+# vendor specific "Vendor_Products" sub collection:
+
+```dart
+vendors (collection)
+  └── vendorId (doc)
+      └── vendor_products (subcollection)
+          └── vendorProductId (doc)
+              └── productId: "bananaId"
+              └── price: 1.99
+              └── quantity: 10
+              └── isAvailable: true
+
+products (collection)
+  └── bananaId (doc)
+      └── name: "Banana"
+      └── categoryId: "fruitId"
+
+```
+
+```
+1. When a new category is added, it is stored in the global `categories` collection only if it doesn't already exist.
+
+2. When a new product is added with a new name, it is stored in the global `products` collection and also added to the vendor's `vendor_products` subcollection.  
+
+3. If a product with the same name and category already exists, it is reused from the global collection and only a new entry is added to the vendor's `vendor_products` subcollection.
+```

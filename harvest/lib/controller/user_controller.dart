@@ -27,6 +27,22 @@ class UserController {
   }
 
 
+  Future<String?> getEmailByUid(String uid) async {
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['email'] as String?;
+      }
+    } catch (e) {
+      print("Error fetching email by UID: $e");
+    }
+    return null;
+  }
+
+
+
+
   Future<void> updateProfilePicture(String userId, String imageUrl) async {
     try {
       await _firestore.collection('users').doc(userId).update({

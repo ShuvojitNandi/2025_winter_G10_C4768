@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+
 
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -107,84 +107,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 
-  Widget _buildVendorTile(String vendorId) {
-    return StreamBuilder<Vendor?>(
-      stream: _vendorService.getVendor(vendorId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(child: Text('No vendor found'));
-        }
-        Vendor vendor = snapshot.data!;
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VendorHomePage(),
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.deepPurple.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: Offset(2, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    image: DecorationImage(
-                      image: vendor.store_img.isNotEmpty
-                          ? NetworkImage(vendor.store_img)
-                          : AssetImage('assets/placeholder_image.png') as ImageProvider,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: vendor.store_img.isEmpty
-                      ? Center(child: Icon(Icons.store, size: 50, color: Colors.white))
-                      : null,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 30,
-                  alignment: Alignment.center,
-                  child: Text(
-                    vendor.vendor_name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 168, 144, 209), 
+        backgroundColor: Colors.lightGreen, 
         title: Text("Welcome ${userName ?? 'User'}"),
         actions: [
           IconButton(onPressed: signout, icon: const Icon(Icons.logout)),
@@ -260,4 +187,79 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+
+  Widget _buildVendorTile(String vendorId) {
+    return StreamBuilder<Vendor?>(
+      stream: _vendorService.getVendor(vendorId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Center(child: Text('No vendor found'));
+        }
+
+        Vendor vendor = snapshot.data!;
+        final imageUrl = vendor.store_img.isNotEmpty
+            ? vendor.store_img
+            : 'https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg';
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VendorHomePage(vendorId: vendor.id!),
+              ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.lightGreenAccent,
+                  blurRadius: 6,
+                  offset: Offset(2, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 30,
+                  alignment: Alignment.center,
+                  child: Text(
+                    vendor.vendor_name,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
 }
