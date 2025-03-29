@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/vendor_service.dart';
@@ -46,11 +47,18 @@ class _VendorHomePageState extends State<VendorHomePage> {
         title: Text('Haricot Farms'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.menu),
             onPressed: () {
               _scaffoldKey.currentState?.openEndDrawer();
             },
           ),
+
         ],
       ),
       endDrawer: Drawer(
