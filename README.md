@@ -1,5 +1,5 @@
 ## What is changed from Vendor_home_page branch
-1. Rather than saving the vendor details unnder Users collections, we now have 3 collections:
+1. Rather than saving the vendor details under Users collections, we now have 3 collections:
   - users
   - vendors
   - products
@@ -50,6 +50,7 @@ By storing the vendor IDs in the shops array, the app can quickly display the st
 
 
 ###  In the future, the vendor document will include a field 'products' (dynamic list, like python dictionary) that maps a product ID to vendor-specific details like price and available quantity
+<<<<<<< HEAD
 
 
 
@@ -79,3 +80,5 @@ products (collection)
 
 3. If a product with the same name and category already exists, it is reused from the global collection and only a new entry is added to the vendor's `vendor_products` subcollection.
 ```
+=======
+>>>>>>> 72beefd71c3bbfcf7a1f56347f724c5acbf49f51
