@@ -1,3 +1,5 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import './firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -5,25 +7,20 @@ import 'package:flutter/material.dart';
 import 'auth_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'controller/messaging_controller.dart' as messaging;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await messaging.init();
+  await messaging.subscribeToTopic("test");
 
-  // Used for app check validation
-
-  // if (kDebugMode) {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.debug,
-  //     appleProvider: AppleProvider.debug,
-  //   );
-  // } else {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.playIntegrity,
-  //     appleProvider: AppleProvider.appAttest,
-  //   );
-  // }
+  messaging.foregroundMessageEvent.connect((content) {
+    print("title: ${content.notification?.title}");
+    print("body: ${content.notification?.body}");
+    print("data: ${content.data.toString()}");
+  });
 
   runApp(MainApp());
 }
