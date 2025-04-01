@@ -3,6 +3,7 @@ import '../controller/vendor_service.dart';
 import '../model/vendor_model.dart';
 import 'adding_category_product.dart';
 import 'vendor_registration.dart';
+import 'product_edit_screen.dart';
 
 class VendorHomePage extends StatefulWidget {
   final String vendorId;
@@ -246,9 +247,25 @@ class _VendorHomePageState extends State<VendorHomePage> {
                                     : Icon(Icons.image_not_supported, size: 40),
                                 title: Text(product.productName),
                                 subtitle: Text('Price: \$${product.price} | Qty: ${product.quantity}'),
-                                trailing: Icon(
-                                  product.isAvailable ? Icons.check_circle : Icons.cancel,
-                                  color: product.isAvailable ? Colors.green : Colors.red,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => updateProduct(vendorProduct: product),
+                                          )
+                                        );
+                                      },
+                                    ),
+                                    Icon(
+                                      product.isAvailable ? Icons.check_circle : Icons.cancel,
+                                      color: product.isAvailable ? Colors.green : Colors.red,
+                                    ),
+                                  ],
                                 ),
                               );
                             },
