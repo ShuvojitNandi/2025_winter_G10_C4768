@@ -20,13 +20,15 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
   final _productDescriptionController = TextEditingController();
 
   final _categoryService = CategoryService();
-  final _productService = ProductService();
+  final _globalProduct = ProductService();
+  final _vendorProduct = VendorProductController();
   final ImagePicker _picker = ImagePicker();
 
   String? _selectedCategoryId;
   String? _uploadedImageUrl;
 
   static const String _defaultImageUrl = 'https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg';
+
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +165,8 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
     );
   }
 
+
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -173,10 +177,12 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
     );
   }
 
+
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
   }
+
 
   Future<void> _pickAndUploadImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -184,13 +190,15 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
       final file = File(pickedFile.path);
       final productId = DateTime.now().millisecondsSinceEpoch.toString();
       try {
-        final url = await _productService.uploadProductImage(file, widget.vendorId, productId);
+        final url = await _vendorProduct.uploadProductImage(file, widget.vendorId, productId);
         setState(() => _uploadedImageUrl = url);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
       }
     }
   }
+
+
 
   Future<void> _addProduct() async {
     final name = _capitalize(_productNameController.text.trim());
@@ -201,26 +209,31 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
 
     if (categoryId == null || name.isEmpty) return;
 
-    final existingProduct = await _productService.findProductByNameAndCategory(name, categoryId);
+    final existingProduct = await _globalProduct.findProductByNameAndCategory(name, categoryId);
     String productId;
 
     if (existingProduct != null) {
       productId = existingProduct.id!;
     } else {
       final product = Product(name: name, categoryId: categoryId);
-      final docRef = await _productService.addProduct(product);
+      final docRef = await _globalProduct.addProduct(product);
       productId = docRef.id;
     }
 
-    await _productService.addVendorProduct(
+    final vendorProduct = VendorProduct(
       vendorId: widget.vendorId,
       productId: productId,
+      productName: name,
+      categoryId: categoryId,
       price: price,
       quantity: quantity,
       isAvailable: true,
       imageUrl: _uploadedImageUrl,
       description: description.isNotEmpty ? description : null,
     );
+
+    await _vendorProduct.addVendorProduct(vendorProduct);
+    await _globalProduct.addVendorToProduct(productId, widget.vendorId);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -229,4 +242,5 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
       Navigator.pop(context);
     }
   }
+
 }

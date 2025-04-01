@@ -85,22 +85,25 @@ class Category {
   }
 }
 
+
 class Product {
   final String? id;
   final String name;
   final String categoryId;
-  
+  final List<String> vendorIds; 
+
   Product({
     this.id,
     required this.name,
     required this.categoryId,
-  
+    this.vendorIds = const [], 
   });
 
   Map<String, dynamic> toMap() {
-    return{
+    return {
       'name': name,
       'categoryId': categoryId,
+      'vendorIds': vendorIds,
     };
   }
 
@@ -110,44 +113,72 @@ class Product {
       id: doc.id,
       name: map['name'] ?? '',
       categoryId: map['categoryId'] ?? '',
+      vendorIds: List<String>.from(map['vendorIds'] ?? []),
     );
   }
 }
 
 
-// sub collection to store vendor specific products 
+
+// main collection to store vendor specific products (now it will have product id, vendorid, category id)
 class VendorProduct {
   final String? id;
-  final String productId;                         //this will refernce the global product id 
+  final String vendorId;
+  final String productId;
+  final String productName;
+  final String categoryId;
   final double price;
   final int quantity;
   final bool isAvailable;
+  final String? imageUrl;
+  final String? description;
+  final Timestamp? timestamp;
 
   VendorProduct({
     this.id,
+    required this.vendorId,
     required this.productId,
+    required this.productName,
+    required this.categoryId,
     required this.price,
     required this.quantity,
     required this.isAvailable,
+    this.imageUrl,
+    this.description,
+    this.timestamp,
   });
 
   Map<String, dynamic> toMap() {
     return {
+      'vendorId': vendorId,
       'productId': productId,
+      'productName': productName,
+      'categoryId': categoryId,
       'price': price,
       'quantity': quantity,
       'isAvailable': isAvailable,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      if (description != null) 'description': description,
+      'timestamp': FieldValue.serverTimestamp(),
     };
   }
 
   static VendorProduct fromMap(DocumentSnapshot doc) {
-    Map<String, dynamic> map = doc.data() as Map<String, dynamic>;
+    final map = doc.data() as Map<String, dynamic>;
     return VendorProduct(
       id: doc.id,
+      vendorId: map['vendorId'] ?? '',
       productId: map['productId'] ?? '',
+      productName: map['productName'] ?? '',
+      categoryId: map['categoryId'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
       quantity: map['quantity'] ?? 0,
       isAvailable: map['isAvailable'] ?? true,
+      imageUrl: map['imageUrl'],
+      description: map['description'],
+      timestamp: map['timestamp'],
     );
   }
 }
+
+

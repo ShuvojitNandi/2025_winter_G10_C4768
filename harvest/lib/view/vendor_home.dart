@@ -15,50 +15,30 @@ class VendorHomePage extends StatefulWidget {
 class _VendorHomePageState extends State<VendorHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final _categoryService = CategoryService();
-  final _productService = ProductService();
+  final _vendorProduct = VendorProductController();
   final _vendorService = VendorService();
 
   String? _selectedCategoryId;
-  List<Product> _allProducts = [];
-  List<String> _filteredProductIds = [];
+  List<VendorProduct> _filteredVendorProducts = [];
 
   @override
   void initState() {
     super.initState();
-    _loadGlobalProducts();
-  }
-
-  Future<void> _loadGlobalProducts() async {
-    _productService.getProducts().listen((products) {
-      setState(() {
-        _allProducts = products;
-      });
-    });
   }
 
   Future<void> _filterVendorProducts(String categoryId) async {
-    _productService.getVendorProductsStream(widget.vendorId).listen((vendorProducts) {
-      final filtered = vendorProducts
-          .where((vp) {
-            final product = _allProducts.firstWhere(
-              (p) => p.id == vp['productId'],
-              orElse: () => Product(id: '', name: '', categoryId: ''),
-            );
-            return product.categoryId == categoryId;
-          })
-          .map((vp) => vp['productId'].toString())
-          .toList();
-
-      setState(() {
-        _filteredProductIds = filtered;
-      });
+    final vendorProducts = await _vendorProduct.getProductsByVendorAndCategory(widget.vendorId, categoryId);
+    setState(() {
+      _filteredVendorProducts = vendorProducts;
     });
   }
+
 
   void _openVendorEditDialog(Vendor vendor) async {
     await showDialog(
       context: context,
-      builder: (context) => Dialog(child: VendorRegistrationPage(vendor: vendor)),
+      builder: (context) =>
+          Dialog(child: VendorRegistrationPage(vendor: vendor)),
     );
   }
 
@@ -82,7 +62,8 @@ class _VendorHomePageState extends State<VendorHomePage> {
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(color: Colors.deepPurple),
-              child: Text('Options', style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: Text('Options',
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
             ListTile(
               title: Text('Product Manager'),
@@ -90,7 +71,9 @@ class _VendorHomePageState extends State<VendorHomePage> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CategoryProductManager(vendorId: widget.vendorId)),
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          CategoryProductManager(vendorId: widget.vendorId)),
                 );
               },
             ),
@@ -100,7 +83,9 @@ class _VendorHomePageState extends State<VendorHomePage> {
       body: StreamBuilder<Vendor?>(
         stream: _vendorService.getVendor(widget.vendorId),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
           final vendor = snapshot.data!;
 
           return Padding(
@@ -117,7 +102,7 @@ class _VendorHomePageState extends State<VendorHomePage> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.deepPurple.withOpacity(0.3),
+                            color: Colors.deepPurple.withAlpha((0.3 * 255).toInt()),
                             blurRadius: 6,
                             offset: Offset(0, 4),
                           )
@@ -133,11 +118,13 @@ class _VendorHomePageState extends State<VendorHomePage> {
                             height: 200,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
                               height: 200,
                               color: Colors.grey[300],
                               alignment: Alignment.center,
-                              child: Icon(Icons.store, size: 40, color: Colors.grey),
+                              child: Icon(Icons.store,
+                                  size: 40, color: Colors.grey),
                             ),
                           ),
                           Padding(
@@ -145,13 +132,19 @@ class _VendorHomePageState extends State<VendorHomePage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(vendor.vendor_name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                Text(vendor.vendor_name,
+                                    style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold)),
                                 SizedBox(height: 8),
                                 Text('Email: ${vendor.email}'),
                                 Text('Phone: ${vendor.phone}'),
-                                if (vendor.website != null) Text('Website: ${vendor.website}'),
-                                if (vendor.facebook != null) Text('Facebook: ${vendor.facebook}'),
-                                if (vendor.instagram != null) Text('Instagram: ${vendor.instagram}'),
+                                if (vendor.website != null)
+                                  Text('Website: ${vendor.website}'),
+                                if (vendor.facebook != null)
+                                  Text('Facebook: ${vendor.facebook}'),
+                                if (vendor.instagram != null)
+                                  Text('Instagram: ${vendor.instagram}'),
                               ],
                             ),
                           ),
@@ -168,7 +161,9 @@ class _VendorHomePageState extends State<VendorHomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Store Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('Store Description',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                             SizedBox(height: 8),
                             Text(vendor.store_descrip),
                           ],
@@ -184,7 +179,9 @@ class _VendorHomePageState extends State<VendorHomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Confirmed Dates:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('Confirmed Dates:',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                             SizedBox(height: 8),
                             Text(vendor.conf_dates.join("\n")),
                           ],
@@ -211,7 +208,8 @@ class _VendorHomePageState extends State<VendorHomePage> {
                               if (value != null) _filterVendorProducts(value);
                             });
                           },
-                          decoration: InputDecoration(labelText: 'Select Category'),
+                          decoration:
+                              InputDecoration(labelText: 'Select Category'),
                         );
                       } else {
                         return CircularProgressIndicator();
@@ -220,20 +218,44 @@ class _VendorHomePageState extends State<VendorHomePage> {
                   ),
                   SizedBox(height: 16),
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: 200),
-                    child: _selectedCategoryId == null
-                        ? Center(child: Text('Select a category to view products.'))
-                        : _filteredProductIds.isEmpty
-                            ? Center(child: Text('No products in this category.'))
-                            : ListView.builder(
-                                itemCount: _filteredProductIds.length,
-                                itemBuilder: (context, index) {
-                                  final productId = _filteredProductIds[index];
-                                  final product = _allProducts.firstWhere((p) => p.id == productId);
-                                  return ListTile(title: Text(product.name));
-                                },
-                              ),
-                  ),
+                      constraints: BoxConstraints(maxHeight: 200),
+                      child: Builder(
+                        builder: (context) {
+                          if (_selectedCategoryId == null) {
+                            return Center(
+                              child: Text('Select a category to view products.'),
+                            );
+                          }
+                          if (_filteredVendorProducts.isEmpty) {
+                            return Center(
+                              child: Text('No products in this category.'),
+                            );
+                          }
+                          return ListView.builder(
+                            itemCount: _filteredVendorProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = _filteredVendorProducts[index];
+                              return ListTile(
+                                leading: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                                    ? Image.network(
+                                        product.imageUrl!,
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Icon(Icons.image_not_supported, size: 40),
+                                title: Text(product.productName),
+                                subtitle: Text('Price: \$${product.price} | Qty: ${product.quantity}'),
+                                trailing: Icon(
+                                  product.isAvailable ? Icons.check_circle : Icons.cancel,
+                                  color: product.isAvailable ? Colors.green : Colors.red,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    )
                 ],
               ),
             ),

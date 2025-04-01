@@ -37,20 +37,13 @@ class VendorService {
       throw Exception("Failed to upload store image: $e");
     }
   }
-
-  CollectionReference getVendorProducts(String vendorId) {
-    return vendorCollection.doc(vendorId).collection('vendor_products');
-  }
-
-  CollectionReference getVendorMessages(String vendorId) {
-    return vendorCollection.doc(vendorId).collection('messages');
-  }
 }
 
-class CategoryService {
-  final CollectionReference categoryCollection =
-      FirebaseFirestore.instance.collection('categories');
 
+
+
+class CategoryService {
+  final CollectionReference categoryCollection = FirebaseFirestore.instance.collection('categories');
 
   Future<dynamic> addCategory(Category category) async {
   final snapshot = await categoryCollection
@@ -64,7 +57,6 @@ class CategoryService {
 
   return await categoryCollection.add(category.toMap());
   }
-
 
   Future<void> updateCategory(Category category) async {
     return await categoryCollection.doc(category.id).update(category.toMap());
@@ -81,18 +73,17 @@ class CategoryService {
   }
 }
 
+
+
+
+// global product collection
 class ProductService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  CollectionReference get productsCollection =>
-      _firestore.collection('products');
-
-  CollectionReference getVendorProducts(String vendorId) =>
-      _firestore.collection('vendors').doc(vendorId).collection('vendor_products');
+  final CollectionReference productsCollection = FirebaseFirestore.instance.collection('products');
 
   Future<DocumentReference> addProduct(Product product) async {
     return await productsCollection.add(product.toMap());
   }
+
 
   Future<Product?> findProductByNameAndCategory(String name, String categoryId) async {
     final snapshot = await productsCollection
@@ -100,65 +91,126 @@ class ProductService {
         .where('categoryId', isEqualTo: categoryId)
         .limit(1)
         .get();
-
     if (snapshot.docs.isNotEmpty) {
       return Product.fromMap(snapshot.docs.first);
     }
     return null;
   }
 
-  Future<void> addVendorProduct({
-    required String vendorId,
-    required String productId,
-    required double price,
-    required int quantity,
-    required bool isAvailable,
-    String? imageUrl,
-    String? description,
-  }) async {
-    await getVendorProducts(vendorId).add({
-      'productId': productId,
-      'price': price,
-      'quantity': quantity,
-      'isAvailable': isAvailable,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-      if (description != null) 'description': description,
-      'timestamp': FieldValue.serverTimestamp(),
+
+  Stream<List<Product>> getAllGlobalProducts() {
+    return productsCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Product.fromMap(doc)).toList();
     });
   }
 
-  Future<void> updateVendorProduct({
-    required String vendorId,
-    required String vendorProductId,
-    required Map<String, dynamic> updatedData,
-  }) async {
-    await getVendorProducts(vendorId).doc(vendorProductId).update(updatedData);
+  Future<void> updateProduct(String productId, Map<String, dynamic> updatedData) async {
+    return await productsCollection.doc(productId).update(updatedData);
   }
 
-  Future<void> deleteVendorProduct({
-    required String vendorId,
-    required String vendorProductId,
-  }) async {
-    await getVendorProducts(vendorId).doc(vendorProductId).delete();
-  }
-
-  Stream<List<Map<String, dynamic>>> getVendorProductsStream(String vendorId) {
-    return getVendorProducts(vendorId).snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return {
-          ...data,
-          'id': doc.id,
-        };
-      }).toList();
+  Future<void> addVendorToProduct( String productId, String vendorId) async {
+    await productsCollection.doc(productId).update({
+      'vendorIds': FieldValue.arrayUnion([vendorId]),   //duplicates vendor ids not added
     });
   }
 
-  Stream<List<Product>> getProducts() {
-  return productsCollection.snapshots().map((snapshot) {
-    return snapshot.docs.map((doc) => Product.fromMap(doc)).toList();
-  });
+  Future<void> removeVendorFromList( String productId, String vendorId) async {
+    await productsCollection.doc(productId).update({
+      'vendorIds': FieldValue.arrayRemove([vendorId]),
+    });
+  }
+
+
+  Future<List<String>> getVendorIdsByProductInfo({String? productName, String? categoryId,}) async {
+    Query query = productsCollection;
+    if (productName != null && productName.isNotEmpty) {
+      query = query.where('name', isEqualTo: productName);
+    }
+    if (categoryId != null && categoryId.isNotEmpty) {
+      query = query.where('categoryId', isEqualTo: categoryId);
+    }
+
+    final snapshot = await query.limit(5).get();  // for search functionality, remove this limit 5 later
+    final Set<String> allVendorIds = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final vendorIds = List<String>.from(data['vendorIds'] ?? []);
+      allVendorIds.addAll(vendorIds);
+    }
+    return allVendorIds.toList();
+  }
 }
+
+
+
+
+
+//moved "vendor_products" collection to global collection 
+class VendorProductController {
+  final CollectionReference _vendorProductCollection =
+      FirebaseFirestore.instance.collection('vendor_products');
+
+
+  Future<void> addVendorProduct(VendorProduct product) async {
+    await _vendorProductCollection.add(product.toMap());
+  }
+
+  Future<void> updateVendorProduct(String vendorProductId, Map<String, dynamic> updatedData) async {
+    await _vendorProductCollection.doc(vendorProductId).update(updatedData);
+  }
+
+
+  Future<void> deleteVendorProduct(String vendorId, String productId) async {
+    final query = await _vendorProductCollection
+        .where('vendorId', isEqualTo: vendorId)
+        .where('productId', isEqualTo: productId)
+        .limit(1)
+        .get();
+    if (query.docs.isNotEmpty) {
+      await _vendorProductCollection.doc(query.docs.first.id).delete();
+    }
+  }
+
+
+  Stream<List<VendorProduct>> streamVendorProducts(String vendorId) {         // vendor specific products
+    return _vendorProductCollection
+        .where('vendorId', isEqualTo: vendorId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => VendorProduct.fromMap(doc)).toList());
+  }
+
+
+  Future<List<VendorProduct>> getAllVendorProducts() async {
+    final query = await _vendorProductCollection.get();
+    return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
+  }
+
+
+  Future<VendorProduct?> getVendorProductById(String docId) async {
+    final doc = await _vendorProductCollection.doc(docId).get();
+    if (doc.exists) return VendorProduct.fromMap(doc);
+    return null;
+  }
+
+
+  Future<List<VendorProduct>> getProductsByVendorAndCategory(String vendorId, String categoryId) async {    // for vendor homepage
+    final query = await _vendorProductCollection
+        .where('vendorId', isEqualTo: vendorId)
+        .where('categoryId', isEqualTo: categoryId)
+        .get();
+    return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
+  }
+
+
+  // get all products for multiple vendors
+  Future<List<VendorProduct>> getProductsFromVendors(List<String> vendorIds) async {
+    if (vendorIds.isEmpty) return [];
+    final query = await _vendorProductCollection
+        .where('vendorId', whereIn: vendorIds)
+        .get();
+    return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
+  }
 
 
   Future<String> uploadProductImage(File imageFile, String vendorId, String productId) async {
@@ -174,3 +226,4 @@ class ProductService {
     }
   }
 }
+
