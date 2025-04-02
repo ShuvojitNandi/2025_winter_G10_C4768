@@ -10,7 +10,7 @@ import '../controller/vendor_service.dart';
 import '../controller/user_controller.dart';
 import '../view/vendor_home.dart';
 import 'vendor_registration.dart';
-
+import 'chat_home_screen.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});
@@ -114,6 +114,16 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.lightGreen, 
         title: Text("Welcome ${userName ?? 'User'}"),
         actions: [
+          IconButton(
+              onPressed: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatHomeScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.message)),
           IconButton(onPressed: signout, icon: const Icon(Icons.logout)),
         ],
       ),
