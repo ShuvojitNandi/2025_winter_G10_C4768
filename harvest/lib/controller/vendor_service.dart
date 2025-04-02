@@ -156,8 +156,8 @@ class VendorProductController {
     await _vendorProductCollection.add(product.toMap());
   }
 
-  Future<void> updateVendorProduct(String vendorProductId, Map<String, dynamic> updatedData) async {
-    await _vendorProductCollection.doc(vendorProductId).update(updatedData);
+  Future<void> updateVendorProduct(VendorProduct vendorProduct) async {
+    return await _vendorProductCollection.doc(vendorProduct.id).update(vendorProduct.toMap());
   }
 
 
