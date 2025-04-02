@@ -12,7 +12,7 @@
 
 6. <b>Ratings and Reviews</b>:            for each product,t there will be a rating system, where customers can review the product.
 
-7. <b>Navigation map</b>:                 this is a map of the sales floor that will help the customer to navigate to the right store.
+
 
 
 ## Optional features
@@ -24,3 +24,4 @@
 3. <b>Shopping cart and checkout</b>: customers will have a shopping cart where they can buy certain items.
 
 4. <b>Users can secure their account with 2-factor Authentication.
+5. <b>Navigation map</b>:                 this is a map of the sales floor that will help the customer to navigate to the right store.
