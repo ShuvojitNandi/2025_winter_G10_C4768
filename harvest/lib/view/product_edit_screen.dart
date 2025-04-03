@@ -4,10 +4,10 @@ import '../controller/vendor_service.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
-
 class updateProduct extends StatefulWidget {
   final VendorProduct? vendorProduct;
-  const updateProduct ({super.key, this.vendorProduct});
+  const updateProduct({super.key, this.vendorProduct});
+
   @override
   _updateProductState createState() => _updateProductState();
 }
@@ -22,13 +22,14 @@ class _updateProductState extends State<updateProduct> {
   final ImagePicker _picker = ImagePicker();
 
   String? _uploadedImageUrl;
-  late bool _available;
-  static const String _defaultImageUrl = 'https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg';
+  bool _available = true;
+  bool _isUploadingImage = false;
+  static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
 
   @override
   void initState() {
     super.initState();
-    if(widget.vendorProduct != null) {
+    if (widget.vendorProduct != null) {
       _productNameController.text = widget.vendorProduct!.productName;
       _productPriceController.text = widget.vendorProduct!.price.toString();
       _productDescriptionController.text = widget.vendorProduct!.description ?? "";
@@ -90,10 +91,9 @@ class _updateProductState extends State<updateProduct> {
                     _available ? Icons.check_circle : Icons.cancel,
                     color: _available ? Colors.green : Colors.red,
                   ),
-
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               _buildSectionTitle('Product Image'),
               ElevatedButton.icon(
                 onPressed: _pickAndUploadImage,
@@ -105,13 +105,24 @@ class _updateProductState extends State<updateProduct> {
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
-                    Image.network(
-                      _uploadedImageUrl ?? _defaultImageUrl,
+                    Container(
                       height: 150,
                       width: double.infinity,
-                      fit: BoxFit.cover,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _isUploadingImage
+                          ? Center(child: CircularProgressIndicator())
+                          : Image.network(
+                              (_uploadedImageUrl?.isNotEmpty ?? false) ? _uploadedImageUrl! : _defaultImageUrl,
+                              fit: BoxFit.cover,
+                            ),
                     ),
-                    if (_uploadedImageUrl != null)
+                    if (_uploadedImageUrl != null &&
+                        _uploadedImageUrl!.isNotEmpty &&
+                        _uploadedImageUrl != _defaultImageUrl &&
+                        !_isUploadingImage)
                       GestureDetector(
                         onTap: () {
                           setState(() => _uploadedImageUrl = null);
@@ -128,7 +139,7 @@ class _updateProductState extends State<updateProduct> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _updateProduct,
                 child: Text('update Product'),
@@ -155,11 +166,14 @@ class _updateProductState extends State<updateProduct> {
     if (pickedFile != null) {
       final file = File(pickedFile.path);
       final productId = DateTime.now().millisecondsSinceEpoch.toString();
+      setState(() => _isUploadingImage = true);
       try {
         final url = await _vendorProduct.uploadProductImage(file, widget.vendorProduct!.vendorId, productId);
         setState(() => _uploadedImageUrl = url);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+      } finally {
+        setState(() => _isUploadingImage = false);
       }
     }
   }
@@ -175,9 +189,8 @@ class _updateProductState extends State<updateProduct> {
     final quantity = int.tryParse(_productQuantityController.text.trim()) ?? 0;
     final description = _productDescriptionController.text.trim();
 
-
     final vendorProduct = VendorProduct(
-      id : widget.vendorProduct!.id,
+      id: widget.vendorProduct!.id,
       vendorId: widget.vendorProduct!.vendorId,
       productId: widget.vendorProduct!.productId,
       productName: name,

@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,16 +26,13 @@ class _MyHomePageState extends State<MyHomePage> {
   final UserController _userController = UserController();
   final StorageService _storageService = StorageService();
   final ImagePicker _picker = ImagePicker();
-  final VendorService _vendorService =
-      VendorService();
-
+  final VendorService _vendorService = VendorService();
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
   }
-
 
   Future<void> _fetchUserData() async {
     if (widget.currentUser != null) {
@@ -49,7 +44,6 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
-
 
   Future<void> _pickAndUploadImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -64,7 +58,6 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
   }
-
 
   void _showProfileDialog() {
     showDialog(
@@ -101,30 +94,32 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-
   Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.lightGreen, 
+        backgroundColor: Colors.lightGreen,
         title: Text("Welcome ${userName ?? 'User'}"),
         actions: [
           IconButton(
-              onPressed: (){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatHomeScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.message)),
-          IconButton(onPressed: signout, icon: const Icon(Icons.logout)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatHomeScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.message),
+          ),
+          IconButton(
+            onPressed: signout,
+            icon: const Icon(Icons.logout),
+          ),
         ],
       ),
       body: Padding(
@@ -198,7 +193,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-
   Widget _buildVendorTile(String vendorId) {
     return StreamBuilder<Vendor?>(
       stream: _vendorService.getVendor(vendorId),
@@ -245,9 +239,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    image: DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[300],
+                      alignment: Alignment.center,
+                      child: Icon(Icons.store, size: 40, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -270,6 +280,4 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
-
 }

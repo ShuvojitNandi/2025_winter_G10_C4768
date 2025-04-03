@@ -21,6 +21,7 @@ class _VendorHomePageState extends State<VendorHomePage> {
 
   String? _selectedCategoryId;
   List<VendorProduct> _filteredVendorProducts = [];
+  static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
 
   @override
   void initState() {
@@ -33,7 +34,6 @@ class _VendorHomePageState extends State<VendorHomePage> {
       _filteredVendorProducts = vendorProducts;
     });
   }
-
 
   void _openVendorEditDialog(Vendor vendor) async {
     await showDialog(
@@ -219,60 +219,80 @@ class _VendorHomePageState extends State<VendorHomePage> {
                   ),
                   SizedBox(height: 16),
                   ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: 200),
-                      child: Builder(
-                        builder: (context) {
-                          if (_selectedCategoryId == null) {
-                            return Center(
-                              child: Text('Select a category to view products.'),
-                            );
-                          }
-                          if (_filteredVendorProducts.isEmpty) {
-                            return Center(
-                              child: Text('No products in this category.'),
-                            );
-                          }
-                          return ListView.builder(
-                            itemCount: _filteredVendorProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = _filteredVendorProducts[index];
-                              return ListTile(
-                                leading: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                                    ? Image.network(
-                                        product.imageUrl!,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Icon(Icons.image_not_supported, size: 40),
-                                title: Text(product.productName),
-                                subtitle: Text('Price: \$${product.price} | Qty: ${product.quantity}'),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => updateProduct(vendorProduct: product),
-                                          )
-                                        );
-                                      },
-                                    ),
-                                    Icon(
-                                      product.isAvailable ? Icons.check_circle : Icons.cancel,
-                                      color: product.isAvailable ? Colors.green : Colors.red,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                    constraints: BoxConstraints(maxHeight: 200),
+                    child: Builder(
+                      builder: (context) {
+                        if (_selectedCategoryId == null) {
+                          return Center(
+                            child: Text('Select a category to view products.'),
                           );
-                        },
-                      ),
-                    )
+                        }
+                        if (_filteredVendorProducts.isEmpty) {
+                          return Center(
+                            child: Text('No products in this category.'),
+                          );
+                        }
+                        return ListView.builder(
+                          itemCount: _filteredVendorProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _filteredVendorProducts[index];
+                            return ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  product.imageUrl != null && product.imageUrl!.isNotEmpty
+                                      ? product.imageUrl!
+                                      : _defaultImageUrl,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      width: 50,
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              title: Text(product.productName),
+                              subtitle: Text('Price: \$${product.price} | Qty: ${product.quantity}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.edit),
+                                    onPressed: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => updateProduct(vendorProduct: product),
+                                        ),
+                                      );
+                                      if (_selectedCategoryId != null) {
+                                        await _filterVendorProducts(_selectedCategoryId!);
+                                      }
+                                    },
+                                  ),
+                                  Icon(
+                                    product.isAvailable ? Icons.check_circle : Icons.cancel,
+                                    color: product.isAvailable ? Colors.green : Colors.red,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  )
                 ],
               ),
             ),

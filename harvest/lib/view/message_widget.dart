@@ -5,7 +5,7 @@ class MessageWidget extends StatelessWidget {
   final Message message;
   final bool isSent;
 
-  MessageWidget({required this.message, required this.isSent});
+  const MessageWidget({super.key, required this.message, required this.isSent});
 
   @override
   Widget build(BuildContext context) {

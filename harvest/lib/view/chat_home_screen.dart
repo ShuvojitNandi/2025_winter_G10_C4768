@@ -6,7 +6,7 @@ import 'chat_screen.dart';
 
 class ChatHomeScreen extends StatefulWidget {
 
-  const ChatHomeScreen({Key? key}) : super(key: key);
+  const ChatHomeScreen({super.key});
 
   @override
   State<ChatHomeScreen> createState() => _ChatHomeScreenState();

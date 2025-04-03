@@ -11,7 +11,7 @@ import '../controller/chat_service.dart';
 class ChatScreen extends StatefulWidget {
   final DocumentSnapshot peer;
 
-  ChatScreen({required this.peer});
+  const ChatScreen({super.key, required this.peer});
 
   @override
   State<ChatScreen> createState() {

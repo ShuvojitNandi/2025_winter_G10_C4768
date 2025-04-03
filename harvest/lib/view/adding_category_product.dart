@@ -26,9 +26,9 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
 
   String? _selectedCategoryId;
   String? _uploadedImageUrl;
+  bool _isUploadingImage = false;
 
-  static const String _defaultImageUrl = 'https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg';
-
+  static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
 
   @override
   Widget build(BuildContext context) {
@@ -54,17 +54,11 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
                     if (name.isNotEmpty) {
                       final category = Category(name: name);
                       final result = await _categoryService.addCategory(category);
-
                       if (result is String) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(result)),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Category "$name" added successfully')),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Category "$name" added successfully')));
                       }
-
                       _categoryNameController.clear();
                       setState(() {});
                     }
@@ -130,19 +124,25 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
-                    Image.network(
-                      _uploadedImageUrl ?? _defaultImageUrl,
+                    Container(
                       height: 150,
                       width: double.infinity,
-                      fit: BoxFit.cover,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _isUploadingImage
+                          ? Center(child: CircularProgressIndicator())
+                          : Image.network(
+                              _uploadedImageUrl?.isNotEmpty == true ? _uploadedImageUrl! : _defaultImageUrl,
+                              fit: BoxFit.cover,
+                            ),
                     ),
-                    if (_uploadedImageUrl != null)
+                    if (_uploadedImageUrl != null && _uploadedImageUrl!.isNotEmpty && !_isUploadingImage)
                       GestureDetector(
                         onTap: () {
                           setState(() => _uploadedImageUrl = null);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Image removed')),
-                          );
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image removed')));
                         },
                         child: CircleAvatar(
                           radius: 14,
@@ -165,8 +165,6 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
     );
   }
 
-
-
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -177,16 +175,15 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
     );
   }
 
-
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
   }
 
-
   Future<void> _pickAndUploadImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
+      setState(() => _isUploadingImage = true);
       final file = File(pickedFile.path);
       final productId = DateTime.now().millisecondsSinceEpoch.toString();
       try {
@@ -194,11 +191,11 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
         setState(() => _uploadedImageUrl = url);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+      } finally {
+        setState(() => _isUploadingImage = false);
       }
     }
   }
-
-
 
   Future<void> _addProduct() async {
     final name = _capitalize(_productNameController.text.trim());
@@ -236,11 +233,8 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
     await _globalProduct.addVendorToProduct(productId, widget.vendorId);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$name has been added to your store')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name has been added to your store')));
       Navigator.pop(context);
     }
   }
-
 }
