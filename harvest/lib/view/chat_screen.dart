@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../model/message.dart';
 import 'message_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,7 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: StreamBuilder<List<Message>>(
                   stream: _chatService.getMessages(widget.peer),
-                  builder: (context, snapshot){
+                  builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       print("all messages snapshot error: ${snapshot.error}");
                       return Center(child: Text('Error: ${snapshot.error}'));
@@ -54,17 +53,18 @@ class _ChatScreenState extends State<ChatScreen> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final message = messages[index];
-                        final isSent=
+                        final isSent =
                             message.senderId == _auth.currentUser!.uid;
 
-                        return MessageWidget(message:  message, isSent: isSent);
+                        return MessageWidget(message: message, isSent: isSent);
                       },
                     );
                   },
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 child: Column(
                   children: [
                     Row(

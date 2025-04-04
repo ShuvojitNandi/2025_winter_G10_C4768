@@ -1,19 +1,22 @@
+const functions = require('firebase-functions');
 require('dotenv').config();
 const app = require('./app');
-const getToken = require('./modules/oauth2');
-const port = process.env.PORT || 3000;
 
-// const getUrl = () =>
-//     (process.env?.URL ?? `127.0.0.1:${port}`).replace(/<PORT>/g, port);
+// const port = process.env.PORT || 3000;
 
-const buildServer = async () => {
-    app.listen(port, () => {
-        console.log(`Running on port ${port}`);
-    });
-};
+// // const getUrl = () =>
+// //     (process.env?.URL ?? `127.0.0.1:${port}`).replace(/<PORT>/g, port);
 
-const init = async () => {
-    buildServer();
-};
+// const buildServer = async () => {
+//     app.listen(port, () => {
+//         console.log(`Running on port ${port}`);
+//     });
+// };
 
-init();
+// const init = async () => {
+//     buildServer();
+// };
+
+// init();
+
+exports.api = functions.https.onRequest(app);

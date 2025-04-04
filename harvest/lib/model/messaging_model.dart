@@ -15,7 +15,7 @@ Future<String?> getDeviceToken() async {
 }
 
 String getBaseURL() {
-  return "http://172.18.224.1:3000";
+  return "https://us-central1-harvest-587ba.cloudfunctions.net/api";
 }
 
 Future<http.Response> sendMessageToTopic(TopicMessageRequest request) async {
