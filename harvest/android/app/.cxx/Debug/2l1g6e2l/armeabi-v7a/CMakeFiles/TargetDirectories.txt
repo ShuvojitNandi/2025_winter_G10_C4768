@@ -1,0 +1,2 @@
+C:/Users/kyle/Documents/GitHub/C_4768_final_project/harvest/android/app/.cxx/Debug/2l1g6e2l/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/kyle/Documents/GitHub/C_4768_final_project/harvest/android/app/.cxx/Debug/2l1g6e2l/armeabi-v7a/CMakeFiles/rebuild_cache.dir
