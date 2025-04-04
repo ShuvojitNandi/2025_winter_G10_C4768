@@ -1,12 +1,11 @@
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:harvest/controller/firestore_service.dart';
-import 'package:image_picker/image_picker.dart';
-import '../model/vendor_model.dart';
-import '../controller/vendor_service.dart';
+import 'package:harvest/controller/storage_controller.dart';
+import 'package:harvest/controller/vendor_service.dart';
+
+import 'package:harvest/view/components/user_profile.dart';
+import 'package:harvest/view/components/vendor_tile_grid.dart';
 import '../controller/user_controller.dart';
-import '../view/vendor_home.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 
@@ -19,24 +18,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String? profileImageUrl;
   String? userName;
+  String? profileImageUrl;
+
   List<String> userShops = [];
+  List<String> allShops = [];
 
   final UserController _userController = UserController();
-  final StorageService _storageService = StorageService();
-  final ImagePicker _picker = ImagePicker();
+  final StorageController _storageController = StorageController();
   final VendorService _vendorService = VendorService();
+
+  UserProfile? _userProfile;
 
   @override
   void initState() {
     super.initState();
+
+    _userProfile = UserProfile(currentUser: widget.currentUser);
     _fetchUserData();
   }
 
   Future<void> _fetchUserData() async {
     if (widget.currentUser != null) {
-      var user = await _userController.fetchUserDataByEmail(widget.currentUser!.email!);
+      var user = await _userController
+          .fetchUserDataByEmail(widget.currentUser!.email!);
       setState(() {
         userName = user?.name ?? widget.currentUser?.displayName;
         profileImageUrl = user?.profileImageUrl;
@@ -45,239 +50,171 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _pickAndUploadImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      String downloadUrl = await _storageService.uploadProfilePicture(imageFile, widget.currentUser!.uid);
-      if (downloadUrl.isNotEmpty) {
-        setState(() {
-          profileImageUrl = downloadUrl;
-        });
-        await _userController.updateProfilePicture(widget.currentUser!.uid, downloadUrl);
-      }
-    }
-  }
-
-  void _showProfileDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Profile Picture"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.upload),
-                label: const Text("Upload Picture"),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _pickAndUploadImage();
-                },
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.delete),
-                label: const Text("Delete Picture"),
-                onPressed: () {
-                  setState(() {
-                    profileImageUrl = null;
-                  });
-                  _userController.updateProfilePicture(widget.currentUser!.uid, '');
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.lightGreen,
-        title: Text("Welcome ${userName ?? 'User'}"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatHomeScreen(),
+    return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.lightGreen,
+              title: Text("Welcome ${userName ?? 'User'}"),
+              actions: [
+                Builder(builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openEndDrawer();
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: profileImageUrl != null &&
+                                profileImageUrl!.isNotEmpty
+                            ? NetworkImage(profileImageUrl!)
+                            : null,
+                        child: (profileImageUrl == null ||
+                                profileImageUrl!.isEmpty)
+                            ? const Icon(Icons.person, size: 24)
+                            : null,
+                      ),
+                    ),
+                  );
+                })
+              ],
+              bottom: const TabBar(tabs: [
+                Tab(
+                  text: "All Vendors",
                 ),
-              );
-            },
-            icon: const Icon(Icons.message),
-          ),
-          IconButton(
-            onPressed: signout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: _showProfileDialog,
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: profileImageUrl != null && profileImageUrl!.isNotEmpty
-                        ? NetworkImage(profileImageUrl!)
-                        : null,
-                    child: (profileImageUrl == null || profileImageUrl!.isEmpty)
-                        ? const Icon(Icons.person, size: 30)
-                        : null,
-                  ),
+                Tab(
+                  text: "Your Vendors",
+                )
+              ]),
+            ),
+            endDrawer: Drawer(
+              child: profileDrawer(),
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TabBarView(children: [userPage(), vendorPage()]),
+            ),
+            bottomNavigationBar: NavigationBar(
+              onDestinationSelected: (int index) {
+                switch (index) {
+                  case 1:
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatHomeScreen(),
+                      ),
+                    );
+                }
+              },
+              indicatorColor: Colors.lightGreen,
+              selectedIndex: 0,
+              destinations: const <Widget>[
+                NavigationDestination(
+                  selectedIcon: Icon(Icons.store),
+                  icon: Icon(Icons.home_outlined),
+                  label: 'Vendors',
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(userName ?? 'User',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(widget.currentUser?.email ?? 'user@example.com',
-                        style: const TextStyle(color: Colors.grey)),
-                  ],
+                NavigationDestination(
+                  icon: Badge(
+                      label: Text('0'), child: Icon(Icons.messenger_sharp)),
+                  label: 'Messages',
                 ),
               ],
-            ),
-            const SizedBox(height: 70),
-            Text("Your Shops:", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+            )));
+  }
+
+  Widget vendorPage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Expanded(
-              child: userShops.isEmpty
-                  ? Center(child: Text("No shops added yet"))
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.9,
-                      ),
-                      itemCount: userShops.length,
-                      itemBuilder: (context, index) {
-                        return _buildVendorTile(userShops[index]);
-                      },
-                    ),
-            ),
-            ElevatedButton(
+                child: ElevatedButton(
               onPressed: () async {
                 final vendorId = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(builder: (context) => VendorRegistrationPage()),
+                  MaterialPageRoute(
+                      builder: (context) => VendorRegistrationPage()),
                 );
                 if (vendorId != null && vendorId.isNotEmpty) {
-                  await _userController.addShopToUser(widget.currentUser!.uid, vendorId);
+                  await _userController.addShopToUser(
+                      widget.currentUser!.uid, vendorId);
                   _fetchUserData();
                 }
               },
-              child: Text("Register as Vendor"),
-            ),
+              child: Text("Register Vendor"),
+            )),
           ],
         ),
-      ),
+        const SizedBox(height: 10),
+        Text("Your Shops:",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Expanded(
+          child: VendorTileGrid(userShops: userShops),
+        ),
+      ],
     );
   }
 
-  Widget _buildVendorTile(String vendorId) {
-    return StreamBuilder<Vendor?>(
-      stream: _vendorService.getVendor(vendorId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(child: Text('No vendor found'));
-        }
-
-        Vendor vendor = snapshot.data!;
-        final imageUrl = vendor.store_img.isNotEmpty
-            ? vendor.store_img
-            : 'https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg';
-
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VendorHomePage(vendorId: vendor.id!),
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.lightGreenAccent,
-                  blurRadius: 6,
-                  offset: Offset(2, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  clipBehavior: Clip.hardEdge,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[300],
-                      alignment: Alignment.center,
-                      child: Icon(Icons.store, size: 40, color: Colors.grey),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 30,
-                  alignment: Alignment.center,
-                  child: Text(
-                    vendor.vendor_name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  Widget userPage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("All Shops:",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Expanded(
+          child: StreamBuilder(
+              stream: _vendorService.getVendorIds(),
+              builder: (context, snapshot) {
+                return VendorTileGrid(
+                    userShops: snapshot.hasData ? snapshot.requireData : []);
+              }),
+        ),
+      ],
     );
+  }
+
+  Widget profileDrawer() {
+    return ListView(
+      // Important: Remove any padding from the ListView.
+      padding: EdgeInsets.zero,
+      children: [
+        DrawerHeader(
+          child: (_userProfile != null) ? _userProfile! : Container(),
+        ),
+        ListTile(
+          title: const Text('Change Profile'),
+          onTap: _pickAndUploadImage,
+        ),
+        ListTile(
+          title: const Text('Sign Out'),
+          onTap: signout,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    String? downloadUrl =
+        await _storageController.pickAndUploadImage(widget.currentUser!.uid);
+    if (downloadUrl == null || !downloadUrl.isNotEmpty) return;
+
+    setState(() {
+      profileImageUrl = downloadUrl;
+    });
+
+    await _userController.updateProfilePicture(
+        widget.currentUser!.uid, downloadUrl);
   }
 }

@@ -2,13 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../model/user_model.dart';
 
-
 class UserController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? get currentUserId => _auth.currentUser?.uid;
-
 
   Future<UserModel?> fetchUserDataByEmail(String email) async {
     if (email.isEmpty) return null;
@@ -18,7 +16,8 @@ class UserController {
           .where('email', isEqualTo: email)
           .get();
       if (userSnapshot.docs.isNotEmpty) {
-        return UserModel.fromMap(userSnapshot.docs.first.data() as Map<String, dynamic>);
+        return UserModel.fromMap(
+            userSnapshot.docs.first.data() as Map<String, dynamic>);
       }
     } catch (e) {
       print("Error fetching user data: $e");
@@ -26,10 +25,10 @@ class UserController {
     return null;
   }
 
-
   Future<String?> getEmailByUid(String uid) async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
       if (userDoc.exists) {
         final data = userDoc.data() as Map<String, dynamic>;
         return data['email'] as String?;
@@ -39,9 +38,6 @@ class UserController {
     }
     return null;
   }
-
-
-
 
   Future<void> updateProfilePicture(String userId, String imageUrl) async {
     try {
@@ -53,7 +49,6 @@ class UserController {
     }
   }
 
-
   Future<void> addUser(String uid, String name, String email) async {
     try {
       await _firestore.collection('users').doc(uid).set({
@@ -62,18 +57,17 @@ class UserController {
         'email': email,
         'profileImageUrl': '',
         'createdAt': FieldValue.serverTimestamp(),
-        'shops': [], 
+        'shops': [],
       });
     } catch (e) {
       print("Error adding user: $e");
     }
   }
 
-
   Future<void> addShopToUser(String userId, String shopId) async {
     try {
       await _firestore.collection('users').doc(userId).update({
-        'shops': FieldValue.arrayUnion([shopId]), 
+        'shops': FieldValue.arrayUnion([shopId]),
       });
     } catch (e) {
       print("Error adding shop to user: $e");
