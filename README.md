@@ -50,9 +50,7 @@ By storing the vendor IDs in the shops array, the app can quickly display the st
 
 
 ###  In the future, the vendor document will include a field 'products' (dynamic list, like python dictionary) that maps a product ID to vendor-specific details like price and available quantity
-<<<<<<< HEAD
 
->>>>>>> 72beefd71c3bbfcf7a1f56347f724c5acbf49f51
 
 ### updated database structure :
 
