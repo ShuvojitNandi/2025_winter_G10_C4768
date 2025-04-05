@@ -27,6 +27,7 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
   String? _selectedCategoryId;
   String? _uploadedImageUrl;
   bool _isUploadingImage = false;
+  String _selectedUnit = 'Kg';
 
   static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
 
@@ -111,6 +112,25 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
               TextField(
                 controller: _productDescriptionController,
                 decoration: InputDecoration(labelText: 'Product Description (optional)'),
+              ),
+              SizedBox(height: 10),
+              Text("Select Unit:", style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: ['Kg', 'lb', 'L'].map((unit) {
+                  final isSelected = _selectedUnit == unit;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: ChoiceChip(
+                      label: Text(unit),
+                      selected: isSelected,
+                      selectedColor: Colors.purple.shade300,
+                      onSelected: (_) {
+                        setState(() => _selectedUnit = unit);
+                      },
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 10),
               _buildSectionTitle('Product Image'),
@@ -224,6 +244,7 @@ class _CategoryProductManagerState extends State<CategoryProductManager> {
       categoryId: categoryId,
       price: price,
       quantity: quantity,
+      unit: _selectedUnit,
       isAvailable: true,
       imageUrl: _uploadedImageUrl,
       description: description.isNotEmpty ? description : null,

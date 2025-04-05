@@ -6,10 +6,14 @@ class VendorTileGrid extends StatefulWidget {
   const VendorTileGrid(
       {super.key,
       required this.userShops,
-      this.emptyText = "No vendors to display"});
+      this.emptyText = "No vendors to display",
+      this.shrinkWrap = false,
+      this.physics = const AlwaysScrollableScrollPhysics(),});
 
   final List<String> userShops;
   final String emptyText;
+  final bool shrinkWrap;
+  final ScrollPhysics physics;
 
   @override
   State<VendorTileGrid> createState() => _VendorTileGridState();
@@ -21,8 +25,8 @@ class _VendorTileGridState extends State<VendorTileGrid> {
     return widget.userShops.isEmpty
         ? Center(child: Text(widget.emptyText))
         : GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: widget.shrinkWrap,
+            physics: widget.physics,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,

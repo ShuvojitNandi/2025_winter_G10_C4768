@@ -129,6 +129,7 @@ class VendorProduct {
   final String categoryId;
   final double price;
   final int quantity;
+  final String unit;
   final bool isAvailable;
   final String? imageUrl;
   final String? description;
@@ -142,6 +143,7 @@ class VendorProduct {
     required this.categoryId,
     required this.price,
     required this.quantity,
+    required this.unit,
     required this.isAvailable,
     this.imageUrl,
     this.description,
@@ -156,6 +158,7 @@ class VendorProduct {
       'categoryId': categoryId,
       'price': price,
       'quantity': quantity,
+      'unit': unit,
       'isAvailable': isAvailable,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (description != null) 'description': description,
@@ -173,6 +176,7 @@ class VendorProduct {
       categoryId: map['categoryId'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
       quantity: map['quantity'] ?? 0,
+      unit: map['unit'] ?? '',
       isAvailable: map['isAvailable'] ?? true,
       imageUrl: map['imageUrl'],
       description: map['description'],

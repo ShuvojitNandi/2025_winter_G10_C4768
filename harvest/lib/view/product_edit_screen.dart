@@ -25,6 +25,8 @@ class _updateProductState extends State<updateProduct> {
   bool _available = true;
   bool _isUploadingImage = false;
   static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
+  String _selectedUnit = 'kg';
+
 
   @override
   void initState() {
@@ -34,6 +36,7 @@ class _updateProductState extends State<updateProduct> {
       _productPriceController.text = widget.vendorProduct!.price.toString();
       _productDescriptionController.text = widget.vendorProduct!.description ?? "";
       _productQuantityController.text = widget.vendorProduct!.quantity.toString();
+      _selectedUnit = widget.vendorProduct!.unit;
       _uploadedImageUrl = widget.vendorProduct!.imageUrl ?? "";
       _available = widget.vendorProduct!.isAvailable;
     }
@@ -70,6 +73,24 @@ class _updateProductState extends State<updateProduct> {
               TextField(
                 controller: _productDescriptionController,
                 decoration: InputDecoration(labelText: 'Product Description (optional)'),
+              ),SizedBox(height: 10),
+              Text("Select Unit:", style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: ['Kg', 'lb', 'L'].map((unit) {
+                  final isSelected = _selectedUnit == unit;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: ChoiceChip(
+                      label: Text(unit),
+                      selected: isSelected,
+                      selectedColor: Colors.purple.shade300,
+                      onSelected: (_) {
+                        setState(() => _selectedUnit = unit);
+                      },
+                    ),
+                  );
+                }).toList(),
               ),
               SizedBox(height: 10),
               Text("Choose Availability:"),
@@ -197,6 +218,7 @@ class _updateProductState extends State<updateProduct> {
       categoryId: widget.vendorProduct!.categoryId,
       price: price,
       quantity: quantity,
+      unit: _selectedUnit,
       isAvailable: _available,
       imageUrl: _uploadedImageUrl,
       description: description.isNotEmpty ? description : null,

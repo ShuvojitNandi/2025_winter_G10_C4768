@@ -6,6 +6,7 @@ import 'package:harvest/controller/vendor_service.dart';
 import 'package:harvest/view/components/user_profile.dart';
 import 'package:harvest/view/components/vendor_tile_grid.dart';
 import '../controller/user_controller.dart';
+import 'all_vendor_products.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 
@@ -151,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   _fetchUserData();
                 }
               },
-              child: Text("Register Vendor"),
+              child: Text("Register Your Shop"),
             )),
           ],
         ),
@@ -170,16 +171,50 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("All Shops:",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.green.shade800,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "All Shops",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              IconButton(
+                icon: Icon(Icons.search, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllVendorProductsPage(
+                        userId: widget.currentUser!.uid,
+                        userName: userName ?? 'User',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 10),
         Expanded(
           child: StreamBuilder(
-              stream: _vendorService.getVendorIds(),
-              builder: (context, snapshot) {
-                return VendorTileGrid(
-                    userShops: snapshot.hasData ? snapshot.requireData : []);
-              }),
+            stream: _vendorService.getVendorIds(),
+            builder: (context, snapshot) {
+              return VendorTileGrid(
+                  userShops: snapshot.hasData
+                      ? List<String>.from(snapshot.requireData)
+                      : []);
+            },
+          ),
         ),
       ],
     );
@@ -187,7 +222,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget profileDrawer() {
     return ListView(
-      // Important: Remove any padding from the ListView.
       padding: EdgeInsets.zero,
       children: [
         DrawerHeader(
