@@ -1,3 +1,4 @@
+
 ## What is changed from Vendor_home_page branch
 1. Rather than saving the vendor details under Users collections, we now have 3 collections:
   - users
@@ -134,3 +135,4 @@ Create entry in ➜ vendor_products collection
 Product successfully linked to vendor, product and has can be linked to users and categories collections too!
 
 ```
+
