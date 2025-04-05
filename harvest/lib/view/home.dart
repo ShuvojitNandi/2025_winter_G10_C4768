@@ -1,97 +1,220 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:harvest/controller/storage_controller.dart';
+import 'package:harvest/controller/vendor_service.dart';
+
+import 'package:harvest/view/components/user_profile.dart';
+import 'package:harvest/view/components/vendor_tile_grid.dart';
+import '../controller/user_controller.dart';
+import 'vendor_registration.dart';
+import 'chat_home_screen.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({super.key, required this.currentUser});
+  final User? currentUser;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String? userName;
+  String? profileImageUrl;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  List<String> userShops = [];
+  List<String> allShops = [];
+
+  final UserController _userController = UserController();
+  final StorageController _storageController = StorageController();
+  final VendorService _vendorService = VendorService();
+
+  UserProfile? _userProfile;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _userProfile = UserProfile(currentUser: widget.currentUser);
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    if (widget.currentUser != null) {
+      var user = await _userController
+          .fetchUserDataByEmail(widget.currentUser!.email!);
+      setState(() {
+        userName = user?.name ?? widget.currentUser?.displayName;
+        profileImageUrl = user?.profileImageUrl;
+        userShops = user?.shops ?? [];
+      });
+    }
+  }
+
+  Future<void> signout() async {
+    await FirebaseAuth.instance.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.lightGreen,
+              title: Text("Welcome ${userName ?? 'User'}"),
+              actions: [
+                Builder(builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openEndDrawer();
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: profileImageUrl != null &&
+                                profileImageUrl!.isNotEmpty
+                            ? NetworkImage(profileImageUrl!)
+                            : null,
+                        child: (profileImageUrl == null ||
+                                profileImageUrl!.isEmpty)
+                            ? const Icon(Icons.person, size: 24)
+                            : null,
+                      ),
+                    ),
+                  );
+                })
+              ],
+              bottom: const TabBar(tabs: [
+                Tab(
+                  text: "All Vendors",
+                ),
+                Tab(
+                  text: "Your Vendors",
+                )
+              ]),
+            ),
+            endDrawer: Drawer(
+              child: profileDrawer(),
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TabBarView(children: [userPage(), vendorPage()]),
+            ),
+            bottomNavigationBar: NavigationBar(
+              onDestinationSelected: (int index) {
+                switch (index) {
+                  case 1:
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatHomeScreen(),
+                      ),
+                    );
+                }
+              },
+              indicatorColor: Colors.lightGreen,
+              selectedIndex: 0,
+              destinations: const <Widget>[
+                NavigationDestination(
+                  selectedIcon: Icon(Icons.store),
+                  icon: Icon(Icons.home_outlined),
+                  label: 'Vendors',
+                ),
+                NavigationDestination(
+                  icon: Badge(
+                      label: Text('0'), child: Icon(Icons.messenger_sharp)),
+                  label: 'Messages',
+                ),
+              ],
+            )));
+  }
 
-    Future<void> signout() async {
-      await FirebaseAuth.instance.signOut();
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-
-        actions: [IconButton(onPressed: signout, icon: Icon(Icons.logout))],
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
+  Widget vendorPage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+          children: [
+            Expanded(
+                child: ElevatedButton(
+              onPressed: () async {
+                final vendorId = await Navigator.push<String>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => VendorRegistrationPage()),
+                );
+                if (vendorId != null && vendorId.isNotEmpty) {
+                  await _userController.addShopToUser(
+                      widget.currentUser!.uid, vendorId);
+                  _fetchUserData();
+                }
+              },
+              child: Text("Register Vendor"),
+            )),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        const SizedBox(height: 10),
+        Text("Your Shops:",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Expanded(
+          child: VendorTileGrid(userShops: userShops),
+        ),
+      ],
     );
+  }
+
+  Widget userPage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("All Shops:",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Expanded(
+          child: StreamBuilder(
+              stream: _vendorService.getVendorIds(),
+              builder: (context, snapshot) {
+                return VendorTileGrid(
+                    userShops: snapshot.hasData ? snapshot.requireData : []);
+              }),
+        ),
+      ],
+    );
+  }
+
+  Widget profileDrawer() {
+    return ListView(
+      // Important: Remove any padding from the ListView.
+      padding: EdgeInsets.zero,
+      children: [
+        DrawerHeader(
+          child: (_userProfile != null) ? _userProfile! : Container(),
+        ),
+        ListTile(
+          title: const Text('Change Profile'),
+          onTap: _pickAndUploadImage,
+        ),
+        ListTile(
+          title: const Text('Sign Out'),
+          onTap: signout,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    String? downloadUrl =
+        await _storageController.pickAndUploadImage(widget.currentUser!.uid);
+    if (downloadUrl == null || !downloadUrl.isNotEmpty) return;
+
+    setState(() {
+      profileImageUrl = downloadUrl;
+    });
+
+    await _userController.updateProfilePicture(
+        widget.currentUser!.uid, downloadUrl);
   }
 }

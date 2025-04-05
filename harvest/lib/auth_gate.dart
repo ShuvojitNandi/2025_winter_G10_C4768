@@ -13,9 +13,9 @@ class AuthGate extends StatelessWidget {
       builder: (context, snapshot) {
         // If the snapshot has user data, the user is logged in
         if (snapshot.hasData) {
+          User? user = snapshot.data;
           return MyHomePage(
-            title:
-                'Authenticated UID: ${FirebaseAuth.instance.currentUser!.uid}',
+            currentUser: user, // Pass the User object to the homepage
           );
         }
         // If no user data is present, show the login screen
