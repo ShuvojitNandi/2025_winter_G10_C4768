@@ -7,6 +7,8 @@ class VendorService {
   final CollectionReference vendorCollection =
       FirebaseFirestore.instance.collection('vendors');
 
+
+
   Future<DocumentReference<Object?>> addVendor(Vendor vendor) async {
     return await vendorCollection.add(vendor.toMap());
   }
@@ -155,7 +157,8 @@ class ProductService {
 class VendorProductController {
   final CollectionReference _vendorProductCollection =
       FirebaseFirestore.instance.collection('vendor_products');
-
+  final CollectionReference _usersCollection =
+      FirebaseFirestore.instance.collection('users');
   Future<void> addVendorProduct(VendorProduct product) async {
     await _vendorProductCollection.add(product.toMap());
   }
@@ -186,8 +189,18 @@ class VendorProductController {
             snapshot.docs.map((doc) => VendorProduct.fromMap(doc)).toList());
   }
 
-  Future<List<VendorProduct>> getAllVendorProducts() async {
-    final query = await _vendorProductCollection.get();
+  Future<List<VendorProduct>> getAllVendorProducts(String userId) async {
+    final userDoc = await _usersCollection.doc(userId).get();
+    final userData = userDoc.data();
+    if (!userDoc.exists || userDoc.data() == null || !(userData is Map<String, dynamic> && userData.containsKey('shops'))) {
+      // User doesn't exist, or doesn't have the 'shops' field, or is not a vendor.
+      final query = await _vendorProductCollection.get();
+      return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList(); // Return all products
+    }
+    final List<String> vendorIdsToExclude = List<String>.from((userData)['shops'] ?? []);
+
+    final query = await _vendorProductCollection.where('vendorId', whereNotIn: vendorIdsToExclude).get();
+
     return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
   }
 
