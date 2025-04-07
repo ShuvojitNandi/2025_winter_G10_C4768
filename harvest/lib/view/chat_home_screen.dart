@@ -13,6 +13,15 @@ class ChatHomeScreen extends StatefulWidget {
 }
 
 class _ChatHomeScreenState extends State<ChatHomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
@@ -20,7 +29,27 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.lightGreen,
         title: const Text('Messages'),
-
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60.0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Search Users',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(25.0)),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
@@ -32,10 +61,15 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final users = snapshot.data!.docs.where((user) {
+            final userName = user['name'].toString().toLowerCase();
+            return userName.contains(_searchQuery);
+          }).toList();
+
           return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
+            itemCount: users.length,
             itemBuilder: (context,index) {
-              var user = snapshot.data!.docs[index];
+              var user = users[index];
               if (user['uid'] == FirebaseAuth.instance.currentUser!.uid) {
                 return const SizedBox.shrink();
               }
