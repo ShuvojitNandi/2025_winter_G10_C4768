@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../controller/user_controller.dart';
 import '../model/user_model.dart';
+import '../controller/messaging_controller.dart' as message_controller;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,12 +15,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  
-  bool isSigningUp = false; 
+
+  bool isSigningUp = false;
 
   final UserController userController = UserController();
 
-  Future<void> signIn() async {                                                 // Sign In Method
+  Future<void> signIn() async {
+    // Sign In Method
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
@@ -34,14 +36,15 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred during Sign In')),
+          const SnackBar(
+              content: Text('An unexpected error occurred during Sign In')),
         );
       }
     }
   }
 
-                                                                                  
-  Future<void> signUp() async {                                                // Sign Up Method
+  Future<void> signUp() async {
+    // Sign Up Method
     if (nameController.text.trim().isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
@@ -63,11 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
         uid: uid,
         name: nameController.text.trim(),
         email: emailController.text.trim(),
-        profileImageUrl: "", 
+        profileImageUrl: "",
       );
 
-    
-      await userController.addUser(newUser.uid!, newUser.name, newUser.email);    // Save user in Firestore
+      await userController.addUser(
+          newUser.uid!, newUser.name, newUser.email); // Save user in Firestore
+      await message_controller.bindToken(newUser.uid!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,14 +95,15 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred during Sign Up')),
+          const SnackBar(
+              content: Text('An unexpected error occurred during Sign Up')),
         );
       }
     }
   }
 
-  
-  Future<void> forgetPassword() async {                                         // Forgot Password Method
+  Future<void> forgetPassword() async {
+    // Forgot Password Method
     if (emailController.text.trim().isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isSigningUp)                                                    // Show name field only in Sign Up mode(additon)
+            if (isSigningUp) // Show name field only in Sign Up mode(additon)
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(labelText: 'Full Name'),
@@ -142,7 +148,6 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            
             if (!isSigningUp) ...[
               ElevatedButton(onPressed: signIn, child: const Text('Sign In')),
               const SizedBox(height: 10),
@@ -151,10 +156,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text('Create a new account'),
               ),
               const SizedBox(height: 10),
-              ElevatedButton(onPressed: forgetPassword, child: const Text('Forgot Password?')),
-            ] 
-            else ...[
-              ElevatedButton(onPressed: signUp, child: const Text('Create Account')),
+              ElevatedButton(
+                  onPressed: forgetPassword,
+                  child: const Text('Forgot Password?')),
+            ] else ...[
+              ElevatedButton(
+                  onPressed: signUp, child: const Text('Create Account')),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => setState(() => isSigningUp = false),

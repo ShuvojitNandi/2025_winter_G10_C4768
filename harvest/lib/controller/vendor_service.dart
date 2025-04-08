@@ -26,10 +26,35 @@ class VendorService {
     });
   }
 
+  Stream<List<Vendor>> populate(List<String> vendorIds) {
+    if (vendorIds.isEmpty) {
+      return Stream.value([]);
+    }
+
+    if (vendorIds.length > 10) {
+      vendorIds = vendorIds.sublist(0, 10);
+    }
+
+    return vendorCollection
+        .where(FieldPath.documentId, whereIn: vendorIds)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Vendor.fromMap(doc)).toList();
+    });
+  }
+
   Stream<List<String>> getVendorIds() {
     return vendorCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return doc.id;
+      }).toList();
+    });
+  }
+
+  Stream<List<Vendor>> getVendors() {
+    return vendorCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Vendor.fromMap(doc);
       }).toList();
     });
   }

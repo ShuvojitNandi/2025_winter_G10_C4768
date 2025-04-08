@@ -10,6 +10,8 @@ import 'all_vendor_products.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 
+import '../model/vendor_model.dart';
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});
   final User? currentUser;
@@ -21,9 +23,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String? userName;
   String? profileImageUrl;
+  final TextEditingController searchController = TextEditingController();
 
   List<String> userShops = [];
-  List<String> allShops = [];
 
   final UserController _userController = UserController();
   final StorageController _storageController = StorageController();
@@ -43,6 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (widget.currentUser != null) {
       var user = await _userController
           .fetchUserDataByEmail(widget.currentUser!.email!);
+
       setState(() {
         userName = user?.name ?? widget.currentUser?.displayName;
         profileImageUrl = user?.profileImageUrl;
@@ -62,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Scaffold(
             appBar: AppBar(
               backgroundColor: Colors.lightGreen,
-              title: Text("Welcome ${userName ?? 'User'}"),
+              title: Text("Welcome, ${userName ?? 'User'}"),
               actions: [
                 Builder(builder: (context) {
                   return GestureDetector(
@@ -161,7 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Expanded(
-          child: VendorTileGrid(userShops: userShops),
+          child: VendorTileGrid(vendors: _vendorService.populate(userShops)),
         ),
       ],
     );
@@ -180,13 +183,19 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "All Shops",
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
+              Expanded(
+                  child: TextFormField(
+                controller: searchController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Search Vendors",
+                  labelStyle: TextStyle(color: Colors.white70),
+                  border: UnderlineInputBorder(),
+                ),
+                onChanged: (String value) {
+                  setState(() {});
+                },
+              )),
               IconButton(
                 icon: Icon(Icons.search, color: Colors.white),
                 onPressed: () {
@@ -210,9 +219,10 @@ class _MyHomePageState extends State<MyHomePage> {
             stream: _vendorService.getVendorIds(),
             builder: (context, snapshot) {
               return VendorTileGrid(
-                  userShops: snapshot.hasData
-                      ? List<String>.from(snapshot.requireData)
-                      : []);
+                vendors: _vendorService.getVendors(),
+                filter: searchController.text,
+                edit: false,
+              );
             },
           ),
         ),
