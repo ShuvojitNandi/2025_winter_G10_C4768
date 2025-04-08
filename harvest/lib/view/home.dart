@@ -102,32 +102,35 @@ class _MyHomePageState extends State<MyHomePage> {
               padding: const EdgeInsets.all(16.0),
               child: TabBarView(children: [userPage(), vendorPage()]),
             ),
-            bottomNavigationBar: NavigationBar(
-              onDestinationSelected: (int index) {
-                switch (index) {
-                  case 1:
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatHomeScreen(),
-                      ),
-                    );
-                }
-              },
-              indicatorColor: Colors.lightGreen,
-              selectedIndex: 0,
-              destinations: const <Widget>[
-                NavigationDestination(
-                  selectedIcon: Icon(Icons.store),
-                  icon: Icon(Icons.home_outlined),
-                  label: 'Vendors',
-                ),
-                NavigationDestination(
-                  icon: Badge(
-                      label: Text('0'), child: Icon(Icons.messenger_sharp)),
-                  label: 'Messages',
-                ),
-              ],
+            bottomNavigationBar: SizedBox(
+              height: 80,
+              child: NavigationBar(
+                onDestinationSelected: (int index) {
+                  switch (index) {
+                    case 1:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatHomeScreen(),
+                        ),
+                      );
+                  }
+                },
+                indicatorColor: Colors.lightGreen,
+                selectedIndex: 0,
+                destinations: const <Widget>[
+                  NavigationDestination(
+                    selectedIcon: Icon(Icons.store),
+                    icon: Icon(Icons.home_outlined),
+                    label: 'Vendors',
+                  ),
+                  NavigationDestination(
+                    icon: Badge(
+                        label: Text('0'), child: Icon(Icons.messenger_sharp)),
+                    label: 'Messages',
+                  ),
+                ],
+              ),
             )));
   }
 
