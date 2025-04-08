@@ -9,6 +9,7 @@ import '../controller/user_controller.dart';
 import 'all_vendor_products.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
+import '../controller/messaging_controller.dart' as messaging_controller;
 
 import '../model/vendor_model.dart';
 
@@ -36,6 +37,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
+    messaging_controller.foregroundMessageEvent.connect((message) {
+      showRibbon(
+          message.notification?.title ?? "", message.notification?.body ?? "");
+    });
 
     _userProfile = UserProfile(currentUser: widget.currentUser);
     _fetchUserData();
@@ -247,6 +253,43 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ],
     );
+  }
+
+  void showRibbon(String title, String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text(message, style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(Duration(seconds: 3)).then((_) => overlayEntry.remove());
   }
 
   Future<void> _pickAndUploadImage() async {
