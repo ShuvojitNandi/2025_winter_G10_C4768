@@ -73,68 +73,25 @@ Future<void> sendMessageToTopic(TopicMessageRequest request) async {
 }
 
 Future<void> init() async {
-  try {
-    final settings = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: true,
-      sound: true,
-    );
-    print('Notification permissions: ${settings.authorizationStatus}');
+  await FirebaseMessaging.instance.requestPermission(provisional: true);
 
-    // Token handling with more robust logging
-    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
-      print("New FCM token generated: $fcmToken");
-      // Consider adding token refresh handling logic here
-    }).onError((err) {
-      print("FCM token refresh error: $err");
-    });
+  model.DeviceManager manager = model.DeviceManager();
+  String? uid = manager.currentUserId;
 
-    // Get initial token
-    final initialToken = await FirebaseMessaging.instance.getToken();
-    print('Initial FCM token: $initialToken');
-
-    // Foreground message handling
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Foreground message received:');
-      print('Title: ${message.notification?.title}');
-      print('Body: ${message.notification?.body}');
-      print('Data: ${message.data}');
-      foregroundMessageEvent.fire(message);
-    });
-
-    // Background message handling
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      print('App opened from terminated state with message:');
-      print('Title: ${initialMessage.notification?.title}');
-      print('Body: ${initialMessage.notification?.body}');
-    }
-
-    print('Firebase Messaging initialized successfully');
-
-  } catch (e, stackTrace) {
-    print('Error initializing Firebase Messaging: $e');
-    print('Stack trace: $stackTrace');
-    rethrow;
+  if (uid != null) {
+    await bindToken(uid);
   }
-  //await FirebaseMessaging.instance.requestPermission(provisional: true);
 
-  // FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
-  //   print("Change detected in fcm token");
-  // }).onError((err) {
-  //   print("Error with fcm token");
-  // });
+  FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
+    print("Change detected in fcm token");
+  }).onError((err) {
+    print("Error with fcm token");
+  });
 
-  // FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-  //   print("Message received: ${message.notification?.title}");
-  //   foregroundMessageEvent.fire(message);
-  // });
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("Message received: ${message.notification?.title}");
+    foregroundMessageEvent.fire(message);
+  });
 
-  // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 }
