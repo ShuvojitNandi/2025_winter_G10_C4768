@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:harvest/view/notification_manger_page.dart';
 import '../controller/vendor_service.dart';
 import '../model/vendor_model.dart';
 import 'adding_category_product.dart';
@@ -101,6 +102,18 @@ class _VendorHomePageState extends State<VendorHomePage> with SingleTickerProvid
                 );
               },
             ),
+            ListTile(
+              title: Text('Notification Manager'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          NotificationPage()),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -123,6 +136,7 @@ class _VendorHomePageState extends State<VendorHomePage> with SingleTickerProvid
                     children: [
                       GestureDetector(
                         onLongPress: () => _openVendorEditDialog(vendor),
+                        //onLongPress: null,
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,

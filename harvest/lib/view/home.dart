@@ -208,21 +208,35 @@ class _MyHomePageState extends State<MyHomePage> {
               IconButton(
                 icon: Icon(Icons.search, color: Colors.white),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AllVendorProductsPage(
-                        userId: widget.currentUser!.uid,
-                        userName: userName ?? 'User',
-                      ),
-                    ),
-                  );
+
                 },
               ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
+        TextButton(
+          onPressed: (){
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AllVendorProductsPage(
+                  userId: widget.currentUser!.uid,
+                  userName: userName ?? 'User',
+                ),
+              ),
+            );
+          },
+          child: const Text(
+            'See All Vendors',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
+            ),
+          ),
+        ),
+        const SizedBox(height: 3),
         Expanded(
           child: StreamBuilder(
             stream: _vendorService.getVendorIds(),

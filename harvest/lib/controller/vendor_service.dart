@@ -245,6 +245,13 @@ class VendorProductController {
     return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
   }
 
+  Future<List<VendorProduct>> getVendorAllProduct(String vendorId) async {
+    final query = await _vendorProductCollection
+        .where('vendorId', isEqualTo: vendorId)
+        .get();
+    return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
+  }
+
   // get all products for multiple vendors
   Future<List<VendorProduct>> getProductsFromVendors(
       List<String> vendorIds) async {

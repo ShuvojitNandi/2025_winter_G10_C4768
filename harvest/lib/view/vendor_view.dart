@@ -32,6 +32,8 @@ class _VendorViewPageState extends State<VendorViewPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _selectedCategoryId = null;
+    _unfilterVendorProducts();
   }
 
   Future<void> _filterVendorProducts(String categoryId) async {
@@ -40,6 +42,14 @@ class _VendorViewPageState extends State<VendorViewPage>
     setState(() {
       _filteredVendorProducts = vendorProducts;
     });
+  }
+
+  Future<void> _unfilterVendorProducts() async {
+    final vendorProducts = await _vendorProduct.getVendorAllProduct(widget.vendorId);
+    setState(() {
+      _filteredVendorProducts = vendorProducts;
+    });
+    print('Unfiltered Products: ${vendorProducts.length}');
   }
 
   void _openVendorEditDialog(Vendor vendor) async {
@@ -91,11 +101,13 @@ class _VendorViewPageState extends State<VendorViewPage>
               return Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       GestureDetector(
-                        onLongPress: () => _openVendorEditDialog(vendor),
+                        //onLongPress: () => _openVendorEditDialog(vendor),
+                        onLongPress: null,
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -198,18 +210,28 @@ class _VendorViewPageState extends State<VendorViewPage>
                           if (snapshot.hasData) {
                             final categories = snapshot.data!;
                             return DropdownButtonFormField<String>(
-                              value: _selectedCategoryId,
-                              items: categories.map((category) {
-                                return DropdownMenuItem(
-                                  value: category.id,
-                                  child: Text(category.name),
-                                );
-                              }).toList(),
+                              value: null,
+                              items: [DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('All Categories', style: TextStyle(color: Colors.grey)),
+                                ),
+                                ...categories.map((category) {
+                                  return DropdownMenuItem(
+                                    value: category.id,
+                                    child: Text(category.name),
+                                  );
+                                }).toList(),
+                              ],
                               onChanged: (value) {
                                 setState(() {
                                   _selectedCategoryId = value;
-                                  if (value != null)
+                                  if (value != null) {
                                     _filterVendorProducts(value);
+                                  }
+                                  if (value == null) {
+                                    _unfilterVendorProducts();
+                                    print(_filteredVendorProducts);
+                                  }
                                 });
                               },
                               decoration:
@@ -220,81 +242,78 @@ class _VendorViewPageState extends State<VendorViewPage>
                           }
                         },
                       ),
-                      SizedBox(height: 16),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: 200),
-                        child: Builder(
-                          builder: (context) {
-                            if (_selectedCategoryId == null) {
-                              return Center(
-                                child:
-                                    Text('Select a category to view products.'),
-                              );
-                            }
-                            if (_filteredVendorProducts.isEmpty) {
-                              return Center(
-                                child: Text('No products in this category.'),
-                              );
-                            }
-                            return ListView.builder(
-                              itemCount: _filteredVendorProducts.length,
-                              itemBuilder: (context, index) {
-                                final product = _filteredVendorProducts[index];
-                                return ListTile(
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Image.network(
-                                      product.imageUrl != null &&
-                                              product.imageUrl!.isNotEmpty
-                                          ? product.imageUrl!
-                                          : _defaultImageUrl,
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                      loadingBuilder:
-                                          (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Container(
-                                          width: 50,
-                                          height: 50,
-                                          alignment: Alignment.center,
-                                          child: CircularProgressIndicator(
-                                            value: loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                        .cumulativeBytesLoaded /
-                                                    loadingProgress
-                                                        .expectedTotalBytes!
-                                                : null,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  title: Text(product.productName),
-                                  subtitle: Text(
-                                      'Price: \$${product.price} | Qty: ${product.quantity} ${product.unit}'),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        product.isAvailable
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        color: product.isAvailable
-                                            ? Colors.green
-                                            : Colors.red,
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                      //SizedBox(height: 16),
+                      Builder(
+                        builder: (context) {
+                          if (_filteredVendorProducts.isEmpty) {
+                            return Center(
+                              child: Text(_selectedCategoryId == null
+                                  ? 'No products available.'
+                                  : 'No products in this category.',),
                             );
-                          },
-                        ),
-                      )
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _filteredVendorProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = _filteredVendorProducts[index];
+                              return ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Image.network(
+                                    product.imageUrl != null &&
+                                            product.imageUrl!.isNotEmpty
+                                        ? product.imageUrl!
+                                        : _defaultImageUrl,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                      if (loadingProgress == null)
+                                        return child;
+                                      return Container(
+                                        width: 50,
+                                        height: 50,
+                                        alignment: Alignment.center,
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress
+                                                      .expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                title: Text(product.productName),
+                                subtitle: Text(
+                                    'Price: \$${product.price} | Qty: ${product.quantity} ${product.unit}'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      product.isAvailable
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      color: product.isAvailable
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      SizedBox(height: 16),
+
                     ],
                   ),
                 ),
