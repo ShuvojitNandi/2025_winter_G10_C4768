@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controller/vendor_service.dart';
 import '../model/vendor_model.dart';
-import 'adding_category_product.dart';
 import 'vendor_registration.dart';
-import 'product_edit_screen.dart';
 import 'vendor_review_page.dart';
 
 class VendorViewPage extends StatefulWidget {
@@ -208,8 +206,9 @@ class _VendorViewPageState extends State<VendorViewPage>
                               onChanged: (value) {
                                 setState(() {
                                   _selectedCategoryId = value;
-                                  if (value != null)
+                                  if (value != null) {
                                     _filterVendorProducts(value);
+                                  }
                                 });
                               },
                               decoration:
@@ -253,8 +252,9 @@ class _VendorViewPageState extends State<VendorViewPage>
                                       fit: BoxFit.cover,
                                       loadingBuilder:
                                           (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
+                                        if (loadingProgress == null) {
                                           return child;
+                                        }
                                         return Container(
                                           width: 50,
                                           height: 50,

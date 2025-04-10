@@ -32,6 +32,7 @@ class DeviceManager {
       final data = userDoc.data() as Map<String, dynamic>;
       return data['device'] as String?;
     }
+    return null;
   }
 }
 

@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:harvest/controller/vendor_service.dart';
 import '../controller/review_controller.dart';
 import '../model/product_review.dart';
 import '../model/vendor_model.dart';
-import './adding_category_product.dart';
 
 class VendorReviewPage extends StatefulWidget {
   final String vendorId;
