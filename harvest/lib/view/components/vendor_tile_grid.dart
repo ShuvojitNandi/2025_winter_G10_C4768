@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:harvest/view/components/vendor_tile.dart';
 import '../../model/vendor_model.dart';
 
@@ -11,7 +10,7 @@ class VendorTileGrid extends StatefulWidget {
       this.shrinkWrap = false,
       this.physics = const AlwaysScrollableScrollPhysics(),
       this.filter = "",
-      this.edit = true});
+      this.customer = true});
 
   final String filter;
 
@@ -19,7 +18,7 @@ class VendorTileGrid extends StatefulWidget {
   final String emptyText;
   final bool shrinkWrap;
   final ScrollPhysics physics;
-  final bool edit;
+  final bool customer;
 
   @override
   State<VendorTileGrid> createState() => _VendorTileGridState();
@@ -75,7 +74,7 @@ class _VendorTileGridState extends State<VendorTileGrid> {
                   itemCount: vendorsToDisplay.length,
                   itemBuilder: (context, index) {
                     return VendorTile(
-                        vendor: vendorsToDisplay[index], edit: widget.edit);
+                        vendor: vendorsToDisplay[index], customer: widget.customer);
                   },
                 );
         });

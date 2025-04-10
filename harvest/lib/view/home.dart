@@ -169,7 +169,10 @@ class _MyHomePageState extends State<MyHomePage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Expanded(
-          child: VendorTileGrid(vendors: _vendorService.populate(userShops)),
+          child: VendorTileGrid(
+            vendors: _vendorService.populate(userShops),
+            customer: false,
+          ),
         ),
       ],
     );
@@ -226,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
               return VendorTileGrid(
                 vendors: _vendorService.getVendors(),
                 filter: searchController.text,
-                edit: false,
+                customer: true,
               );
             },
           ),

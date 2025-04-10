@@ -1,3 +1,9 @@
+
+
+
+// We do not need this file anymore
+
+
 import 'package:flutter/material.dart';
 import '../controller/vendor_service.dart';
 import '../model/vendor_model.dart';

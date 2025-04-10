@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:harvest/view/vendor_view.dart';
-
 import '../../model/vendor_model.dart';
 import '../../view/vendor_home.dart';
+import '../../view/customer_view_of_vendors.dart';
 
 class VendorTile extends StatefulWidget {
-  const VendorTile({super.key, required this.vendor, required this.edit});
+  const VendorTile({super.key, required this.vendor, required this.customer});
   final Vendor vendor;
-  final bool edit;
+  final bool customer;
 
   @override
   State<VendorTile> createState() => _VendorTileState();
 }
 
 class _VendorTileState extends State<VendorTile> {
-  String? userName;
-  List<String> userShops = [];
-
   @override
   Widget build(BuildContext context) {
     final imageUrl = widget.vendor.store_img.isNotEmpty
@@ -28,9 +24,9 @@ class _VendorTileState extends State<VendorTile> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => widget.edit
-                ? VendorHomePage(vendorId: widget.vendor.id!)
-                : VendorViewPage(vendorId: widget.vendor.id!),
+            builder: (context) => widget.customer
+                ? CustomerVendorPage(vendorId: widget.vendor.id!, vendorName:widget.vendor.vendor_name)
+                : VendorHomePage(vendorId: widget.vendor.id!),
           ),
         );
       },
