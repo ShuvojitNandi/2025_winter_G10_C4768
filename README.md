@@ -1,26 +1,138 @@
-## Core features
 
-1. <b>User Profiles, vendor Profiles</b>: customers and vendors will have separate profiles, vendors can list a new item with price, description and image.
+## What is changed from Vendor_home_page branch
+1. Rather than saving the vendor details under Users collections, we now have 3 collections:
+  - users
+  - vendors
+  - products
+  - categories
 
-2. <b>Search & Filtering</b>:             on the user dashboard users can search for a specific store or filter the stores based on category
+2. Vendor model now look like this: 
+```dart
+class Vendor {
+  final String? id;
+  final String vendor_name;
+  final String store_img;
 
-3. <b>Direct Messaging</b>:               vendors and customers can communicate through direct messaging.
+  final String store_descrip;
+  List<String> conf_dates;
+  List<String> owners;
+  final String email;
+  final String phone;
+  final String? website;
+  final String? facebook;
+  final String? instagram;
+```
+where the `owners` list stores the uid of user/users. 
 
-4. <b>Push notification</b>:              When there is a new message or a vendor has posted a discount for an item the user will get a push notification
+3. Homepage has a button through which user can register for their shop. Right now, the form takes a picture, name, website and other info. Upon registering the homepage updates and shows a vendor card .  This new tile/card take us to the VendorHomePage() . This part needs further modification.
 
-5. <b>Product availability</b>:           the listing will show whether an item is in stock or not
+## Vendor/store IDs in the User Document 
 
-6. <b>Ratings and Reviews</b>:            for each product,t there will be a rating system, where customers can review the product.
+```dart
 
-7. <b>Navigation map</b>:                 this is a map of the sales floor that will help the customer to navigate to the right store.
+UserModel({
+    required this.uid,
+    required this.name,
+    required this.email,
+    this.profileImageUrl,
+    this.shops,
+  });
+
+```
+By storing the vendor IDs in the shops array, the app can quickly display the stores owned by the user on their homepage. As the app grows, this approach helps in efficiently retrieving and displaying vendor data for each user.
 
 
-## Optional features
+## Separate Products Collection
+- A separate products collection will allow for fast queries when users search for products to add to their cart later. 
 
-1. <b>Online payment gatways</b>: customers can pay for the items through the app using an online payment gateway
+- Product name, description, price, and image are stored centrally, avoiding duplication across multiple vendor documents.
 
-2. <b>Dashboard for total sales and orders</b>: vendors will get a separate dashboard where they can track their sales and orders
+- While the global product data remains in one collection, vendors can maintain vendor-specific details like  pricing, quantity, or offers by referencing product IDs in their document.
 
-3. <b>Shopping cart and checkout</b>: customers will have a shopping cart where they can buy certain items.
 
-4. <b>Users can secure their account with 2-factor Authentication.
+###  In the future, the vendor document will include a field 'products' (dynamic list, like python dictionary) that maps a product ID to vendor-specific details like price and available quantity
+
+
+### updated database structure :
+
+```
+vendors ─────────────► {vendorId}
+                        ├── vendor_name: String
+                        ├── store_img: String
+                        ├── store_descrip: String
+                        ├── email: String
+                        ├── phone: String
+                        ├── owners: List<String>
+                        ├── conf_dates: List<String>
+                        ├── website: String?
+                        ├── facebook: String?
+                        ├── instagram: String?
+
+categories ──────────► {categoryId}
+                        └── name: String
+
+products ────────────► {productId}
+                        ├── name: String
+                        ├── categoryId: String
+                        └── vendorIds: List<String>
+
+vendor_products ─────► {autoId}
+                        ├── vendorId: String
+                        ├── productId: String
+                        ├── productName: String
+                        ├── categoryId: String
+                        ├── price: Double
+                        ├── quantity: Int
+                        ├── isAvailable: Bool
+                        ├── imageUrl: String?
+                        ├── description: String?
+                        └── timestamp: Timestamp?
+
+```
+
+## workflow
+
+```
+Vendor opens CategoryProductManager
+        ↓
+Vendor enters product name, selects or adds category
+        ↓
+Check if category exists in ➜ categories collection
+        ↓
+  ┌──────────────┐         Yes
+  │  Category exists? ─────────────────┐
+  └──────────────┘                    ↓
+        ↓                             Skip creation
+     No → Add category to ➜ categories collection
+        ↓
+Check if product exists in ➜ products collection (by name + categoryId)
+        ↓
+  ┌──────────────┐         Yes
+  │  Product exists? ─────────────────────────────────────────┐
+  └──────────────┘                                            ↓
+        ↓                                                     Use existing productId 
+     No → Add product to ➜ products collection
+               └── name
+               └── categoryId
+               └── vendorIds: [vendorId]
+        ↓
+Else → Update vendorIds with ➜ FieldValue.arrayUnion(vendorId)   
+        ↓
+Upload product image to ➜ Firebase Storage if image given
+        ↓
+Create entry in ➜ vendor_products collection
+        ├── vendorId
+        ├── productId
+        ├── productName
+        ├── categoryId
+        ├── price
+        ├── quantity
+        ├── isAvailable
+        ├── imageUrl (optional)
+        ├── description (optional)
+        └── timestamp (auto)
+        ↓
+Product successfully linked to vendor, product and has can be linked to users and categories collections too!
+
+```
+

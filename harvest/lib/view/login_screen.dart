@@ -1,70 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../controller/user_controller.dart';
+import '../model/user_model.dart';
+import '../controller/messaging_controller.dart' as message_controller;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controllers for email and password input fields.
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  // Sign In Method with error handling.
+
+  bool isSigningUp = false;
+
+  final UserController userController = UserController();
+
   Future<void> signIn() async {
+    // Sign In Method
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
-        password: passwordController.text,
+        password: passwordController.text.trim(),
       );
-      // If sign in is successful, AuthGate will automatically show the next screen.
     } on FirebaseAuthException catch (e) {
-      // Display the Firebase error message using a Snackbar.
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Sign In error')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Sign In error')),
+        );
+      }
     } catch (e) {
-      // Display a generic error message.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('An unexpected error occurred during Sign In'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('An unexpected error occurred during Sign In')),
+        );
+      }
     }
   }
 
-  // Sign Up Method with error handling.
   Future<void> signUp() async {
+    // Sign Up Method
+    if (nameController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Name is required!')),
+        );
+      }
+      return;
+    }
+
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
-        password: passwordController.text,
+        password: passwordController.text.trim(),
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sign Up successful!')));
+
+      String uid = userCredential.user!.uid;
+
+      UserModel newUser = UserModel(
+        uid: uid,
+        name: nameController.text.trim(),
+        email: emailController.text.trim(),
+        profileImageUrl: "",
+      );
+
+      await userController.addUser(
+          newUser.uid!, newUser.name, newUser.email); // Save user in Firestore
+      await message_controller.bindToken(newUser.uid!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New account created successfully!')),
+        );
+      }
+
+      // switch back to Sign In mode after successful signup
+      if (mounted) {
+        setState(() {
+          isSigningUp = false;
+        });
+      }
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Sign Up error')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Sign Up error')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('An unexpected error occurred during Sign Up'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('An unexpected error occurred during Sign Up')),
+        );
+      }
     }
   }
 
   Future<void> forgetPassword() async {
+    // Forgot Password Method
+    if (emailController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter your email!')),
+        );
+      }
+      return;
+    }
+
     await FirebaseAuth.instance.sendPasswordResetEmail(
       email: emailController.text.trim(),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password reset sent to email!')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset link sent to email!')),
+      );
+    }
   }
 
   @override
@@ -76,29 +133,41 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Email input field.
+            if (isSigningUp) // Show name field only in Sign Up mode(additon)
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Full Name'),
+              ),
             TextField(
               controller: emailController,
               decoration: const InputDecoration(labelText: 'Email'),
             ),
-            // Password input field.
             TextField(
               controller: passwordController,
               decoration: const InputDecoration(labelText: 'Password'),
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            // Sign In button.
-            ElevatedButton(onPressed: signIn, child: const Text('Sign In')),
-            const SizedBox(height: 10),
-            // Sign Up button.
-            ElevatedButton(onPressed: signUp, child: const Text('Sign Up')),
-            const SizedBox(height: 10),
-            // Sign Up button.
-            ElevatedButton(
-              onPressed: forgetPassword,
-              child: const Text('Forget Password'),
-            ),
+            if (!isSigningUp) ...[
+              ElevatedButton(onPressed: signIn, child: const Text('Sign In')),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => setState(() => isSigningUp = true),
+                child: const Text('Create a new account'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                  onPressed: forgetPassword,
+                  child: const Text('Forgot Password?')),
+            ] else ...[
+              ElevatedButton(
+                  onPressed: signUp, child: const Text('Create Account')),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => setState(() => isSigningUp = false),
+                child: const Text('Already have an account? Sign In'),
+              ),
+            ],
           ],
         ),
       ),

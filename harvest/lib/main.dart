@@ -3,26 +3,39 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'auth_gate.dart';
 
+import 'controller/messaging_controller.dart' as messaging;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    print('Firebase initialized successfully');
 
-  // Used for app check validation
+    await messaging.init();
+    print('Messaging initialized successfully');
 
-  // if (kDebugMode) {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.debug,
-  //     appleProvider: AppleProvider.debug,
-  //   );
-  // } else {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.playIntegrity,
-  //     appleProvider: AppleProvider.appAttest,
-  //   );
-  // }
+    // Wait a moment to ensure everything is ready
+    await Future.delayed(const Duration(seconds: 1));
+    
+    try {
+      await messaging.subscribeToTopic("test");
+      print('Successfully subscribed to topic "test"');
+    } catch (e) {
+      print('Error subscribing to topic: $e');
+    }
 
-  runApp(MainApp());
+    // Set up message listener
+    messaging.foregroundMessageEvent.connect((content) {
+      print("title: ${content.notification?.title}");
+      print("body: ${content.notification?.body}");
+      print("data: ${content.data.toString()}");
+    });
+
+    runApp(MainApp());
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+  }
 }
 
 class MainApp extends StatelessWidget {
@@ -32,7 +45,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: ThemeData.light(),
       home: AuthGate(),
     );
   }
