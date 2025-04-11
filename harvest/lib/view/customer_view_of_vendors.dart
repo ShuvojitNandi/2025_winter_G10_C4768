@@ -5,6 +5,8 @@ import 'package:harvest/controller/cart_controller.dart';
 import 'package:harvest/model/cart_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../controller/review_controller.dart';
+import '../model/product_review.dart';
 
 class CustomerVendorPage extends StatefulWidget {
   final String vendorId;
@@ -167,6 +169,7 @@ class vendorinfo extends StatefulWidget{
 class _vendorinfoState extends State<vendorinfo> {
   static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
   final _vendorService = VendorService();
+  final _reviewService = ReviewController();
   @override
   void initState() {
     super.initState();
@@ -270,6 +273,56 @@ class _vendorinfoState extends State<vendorinfo> {
                   ),
                 ),
               ),
+              SliverAppBar(
+                pinned: true,
+                automaticallyImplyLeading: false, // Remove back button behavior
+                backgroundColor: Colors.white,
+                elevation: 1, // Small shadow
+                titleSpacing: 0, // Align with other content
+                title: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    "Customer Reviews",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                toolbarHeight: 48, // Compact height
+              ),
+              SliverPadding(
+                padding: EdgeInsets.all(16),
+                sliver: StreamBuilder<List<Review>>(
+                  stream: _reviewService.getReviewsByVendorId(widget.vendorId).asStream(),
+                  builder: (context, snapshot){
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+                    }
+                    final reviews = snapshot.data ?? [];
+                    if (reviews.isEmpty) {
+                      return SliverToBoxAdapter(
+                        child: Center(
+                          child: Text(
+                            "No reviews yet",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      );
+                    }
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index >= reviews.length) return null;
+                            return _buildReviewCard(reviews[index]);
+                          },
+                        childCount: reviews.length,
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           );
         },
@@ -297,6 +350,76 @@ class _vendorinfoState extends State<vendorinfo> {
     } catch (e) {
       return dateString; // Fallback to raw string if parsing fails
     }
+  }
+
+  Widget _buildReviewCard(Review review) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Review Header
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.grey[300],
+                  child: Text(review.userName[0]),
+                ),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.userName,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _formatDate(review.timestamp.toDate().toString()),
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+                Spacer(),
+                _buildRatingStars(review.rating.toInt()),
+              ],
+            ),
+
+            SizedBox(height: 12),
+
+            // Review Content
+            Text(review.comment),
+
+            // Review Image (if exists)
+            if (review.imageUrl != null && review.imageUrl!.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    review.imageUrl!,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingStars(int rating) {
+    return Row(
+      children: List.generate(5, (index) => Icon(
+        index < rating ? Icons.star : Icons.star_border,
+        color: Colors.amber,
+        size: 20,
+      )),
+    );
   }
 }
 
