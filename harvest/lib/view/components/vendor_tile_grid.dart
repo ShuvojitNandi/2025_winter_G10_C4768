@@ -6,6 +6,7 @@ class VendorTileGrid extends StatefulWidget {
   const VendorTileGrid(
       {super.key,
       required this.vendors,
+      required this.customerId,
       this.emptyText = "No vendors to display",
       this.shrinkWrap = false,
       this.physics = const AlwaysScrollableScrollPhysics(),
@@ -19,6 +20,8 @@ class VendorTileGrid extends StatefulWidget {
   final bool shrinkWrap;
   final ScrollPhysics physics;
   final bool customer;
+  
+  final dynamic customerId;
 
   @override
   State<VendorTileGrid> createState() => _VendorTileGridState();
@@ -74,7 +77,7 @@ class _VendorTileGridState extends State<VendorTileGrid> {
                   itemCount: vendorsToDisplay.length,
                   itemBuilder: (context, index) {
                     return VendorTile(
-                        vendor: vendorsToDisplay[index], customer: widget.customer);
+                        vendor: vendorsToDisplay[index], customer: widget.customer, customerID: widget.customerId);
                   },
                 );
         });

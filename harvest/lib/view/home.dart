@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'cart_view.dart';
 import 'package:harvest/controller/storage_controller.dart';
 import 'package:harvest/controller/vendor_service.dart';
-
 import 'package:harvest/view/components/user_profile.dart';
 import 'package:harvest/view/components/vendor_tile_grid.dart';
 import '../controller/user_controller.dart';
@@ -10,7 +10,6 @@ import 'all_vendor_products.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 import '../controller/messaging_controller.dart' as messaging_controller;
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});
@@ -20,9 +19,10 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   String? userName;
   String? profileImageUrl;
+  String? userId;
   final TextEditingController searchController = TextEditingController();
 
   List<String> userShops = [];
@@ -30,6 +30,9 @@ class _MyHomePageState extends State<MyHomePage> {
   final UserController _userController = UserController();
   final StorageController _storageController = StorageController();
   final VendorService _vendorService = VendorService();
+
+  late TabController _tabController;
+  int _selectedIndex = 0;
 
   UserProfile? _userProfile;
 
@@ -44,6 +47,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _userProfile = UserProfile(currentUser: widget.currentUser);
     _fetchUserData();
+
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   Future<void> _fetchUserData() async {
@@ -55,6 +60,7 @@ class _MyHomePageState extends State<MyHomePage> {
         userName = user?.name ?? widget.currentUser?.displayName;
         profileImageUrl = user?.profileImageUrl;
         userShops = user?.shops ?? [];
+        userId = user?.uid;
       });
     }
   }
@@ -94,38 +100,56 @@ class _MyHomePageState extends State<MyHomePage> {
                   );
                 })
               ],
-              bottom: const TabBar(tabs: [
-                Tab(
-                  text: "All Vendors",
-                ),
-                Tab(
-                  text: "Your Vendors",
-                )
+              bottom: TabBar(controller: _tabController, tabs: const [
+                Tab(text: "All Vendors"),
+                Tab(text: "Your Shops"),
               ]),
             ),
-            endDrawer: Drawer(
-              child: profileDrawer(),
-            ),
+            endDrawer: Drawer(child: profileDrawer()),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: TabBarView(children: [userPage(), vendorPage()]),
+              child: TabBarView(controller: _tabController, children: [userPage(), vendorPage()]),
             ),
             bottomNavigationBar: SizedBox(
               height: 80,
               child: NavigationBar(
-                onDestinationSelected: (int index) {
-                  switch (index) {
-                    case 1:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatHomeScreen(),
-                        ),
-                      );
+                onDestinationSelected: (int index) async {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+
+                  if (index == 0) {
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      searchController.clear();
+                    });
+                    _tabController.index = 0;
+                  } else if (index == 1) {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatHomeScreen(),
+                      ),
+                    );
+                    setState(() {
+                      _selectedIndex = 0;
+                      _tabController.index = 0;
+                    });
+                  } else if (index == 2) {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CartPage(userId: userId!),
+                      ),
+                    );
+                    setState(() {
+                      _selectedIndex = 0;
+                      _tabController.index = 0;
+                    });
                   }
                 },
                 indicatorColor: Colors.lightGreen,
-                selectedIndex: 0,
+                selectedIndex: _selectedIndex,
                 destinations: const <Widget>[
                   NavigationDestination(
                     selectedIcon: Icon(Icons.store),
@@ -134,8 +158,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   NavigationDestination(
                     icon: Badge(
-                        label: Text('0'), child: Icon(Icons.messenger_sharp)),
+                      label: Text('0'),
+                      child: Icon(Icons.messenger_sharp),
+                    ),
                     label: 'Messages',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.shopping_cart_outlined),
+                    selectedIcon: Icon(Icons.shopping_cart),
+                    label: 'Cart',
                   ),
                 ],
               ),
@@ -154,8 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () async {
                 final vendorId = await Navigator.push<String>(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => VendorRegistrationPage()),
+                  MaterialPageRoute(builder: (context) => VendorRegistrationPage()),
                 );
                 if (vendorId != null && vendorId.isNotEmpty) {
                   await _userController.addShopToUser(
@@ -168,12 +198,10 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
         const SizedBox(height: 10),
-        Text("Your Shops:",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
         Expanded(
           child: VendorTileGrid(
             vendors: _vendorService.populate(userShops),
+            customerId: userId,
             customer: false,
           ),
         ),
@@ -185,40 +213,46 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.green.shade800,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                  child: TextFormField(
-                controller: searchController,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Search Vendors",
-                  labelStyle: TextStyle(color: Colors.white70),
-                  border: UnderlineInputBorder(),
+        Focus(
+          onFocusChange: (hasFocus) {
+            if (!hasFocus && searchController.text.isEmpty) {
+              setState(() {});
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade800,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                    child: TextFormField(
+                  controller: searchController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Search Vendors",
+                    labelStyle: TextStyle(color: Colors.white70),
+                    border: UnderlineInputBorder(),
+                  ),
+                  autofocus: false,
+                  onChanged: (String value) {
+                    setState(() {});
+                  },
+                )),
+                IconButton(
+                  icon: Icon(Icons.search, color: Colors.white),
+                  onPressed: () {},
                 ),
-                onChanged: (String value) {
-                  setState(() {});
-                },
-              )),
-              IconButton(
-                icon: Icon(Icons.search, color: Colors.white),
-                onPressed: () {
-
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 6),
         TextButton(
-          onPressed: (){
+          onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -230,7 +264,7 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           child: const Text(
-            'See All Vendors',
+            'Explore All Vendors',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -245,6 +279,7 @@ class _MyHomePageState extends State<MyHomePage> {
             builder: (context, snapshot) {
               return VendorTileGrid(
                 vendors: _vendorService.getVendors(),
+                customerId: userId,
                 filter: searchController.text,
                 customer: true,
               );
@@ -307,7 +342,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     overlay.insert(overlayEntry);
-
     Future.delayed(Duration(seconds: 3)).then((_) => overlayEntry.remove());
   }
 

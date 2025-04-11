@@ -4,8 +4,9 @@ import '../../view/vendor_home.dart';
 import '../../view/customer_view_of_vendors.dart';
 
 class VendorTile extends StatefulWidget {
-  const VendorTile({super.key, required this.vendor, required this.customer});
+  const VendorTile({super.key, required this.vendor, required this.customer,  required this.customerID});
   final Vendor vendor;
+  final String customerID;
   final bool customer;
 
   @override
@@ -25,7 +26,7 @@ class _VendorTileState extends State<VendorTile> {
           context,
           MaterialPageRoute(
             builder: (context) => widget.customer
-                ? CustomerVendorPage(vendorId: widget.vendor.id!, vendorName:widget.vendor.vendor_name)
+                ? CustomerVendorPage(vendorId: widget.vendor.id!, vendorName:widget.vendor.vendor_name, customerId: widget.customerID,)
                 : VendorHomePage(vendorId: widget.vendor.id!),
           ),
         );

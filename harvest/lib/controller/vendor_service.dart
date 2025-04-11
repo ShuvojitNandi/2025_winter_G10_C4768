@@ -229,11 +229,22 @@ class VendorProductController {
     return query.docs.map((doc) => VendorProduct.fromMap(doc)).toList();
   }
 
-  Future<VendorProduct?> getVendorProductById(String docId) async {
-    final doc = await _vendorProductCollection.doc(docId).get();
-    if (doc.exists) return VendorProduct.fromMap(doc);
+  Future<VendorProduct?> getVendorProductByProductId(String productId) async {
+    final query = await _vendorProductCollection
+        .where('productId', isEqualTo: productId)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      final doc = query.docs.first;
+      final product = VendorProduct.fromMap(doc);
+      print("Loaded product: ${product.productName}, doc ID: ${product.id}");
+      return product;
+    }
+
     return null;
   }
+
 
   Future<List<VendorProduct>> getProductsByVendorAndCategory(
       String vendorId, String categoryId) async {

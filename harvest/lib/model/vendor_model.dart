@@ -128,9 +128,9 @@ class VendorProduct {
   final String productName;
   final String categoryId;
   final double price;
-  final int quantity;
+  int quantity;
   final String unit;
-  final bool isAvailable;
+  bool isAvailable;
   final String? imageUrl;
   final String? description;
   final Timestamp? timestamp;
