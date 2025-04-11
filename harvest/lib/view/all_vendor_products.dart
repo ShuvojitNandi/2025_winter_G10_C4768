@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controller/vendor_service.dart';
@@ -36,7 +37,8 @@ class _AllVendorProductsPageState extends State<AllVendorProductsPage> {
 
   
   Future<void> _fetchProducts() async {
-    final products = await _vendorProductController.getAllVendorProducts();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final products = await _vendorProductController.getAllVendorProducts(currentUser!.uid);
     final Map<String, List<VendorProduct>> grouped = {};
 
     for (var product in products) {
@@ -78,7 +80,7 @@ class _AllVendorProductsPageState extends State<AllVendorProductsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.deepPurple[400],
         title: const Text("All Vendor Products"),
       ),
       body: _groupedProducts.isEmpty
@@ -129,7 +131,16 @@ class _AllVendorProductsPageState extends State<AllVendorProductsPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                Expanded(child: Text(product.productName, style: const TextStyle(fontSize: 16))),
+                                Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(product.productName, style: const TextStyle(fontSize: 16)),
+                                        Text("${product.quantity}${product.unit}"),
+                                        Text("Price: \$${product.price}"),
+                                      ],
+                                    )
+                                ),
                                 ElevatedButton(
                                   onPressed: () => _showReviewDialog(context, product),
                                   style: ElevatedButton.styleFrom(

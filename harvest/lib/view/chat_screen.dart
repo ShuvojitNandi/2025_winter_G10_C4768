@@ -23,11 +23,21 @@ class _ChatScreenState extends State<ChatScreen> {
   late ChatService _chatService;
   final currentUser = FirebaseAuth.instance.currentUser;
 
+  final List<String> _predefinedMessages = [
+    'Hi, thanks for reaching out!',
+    'What are the store hours',
+    'Do you have any specials today!',
+    'What is your return policy?',
+    'Do you offer delivery?',
+    'Thank You!',
+  ];
+
   @override
   Widget build(BuildContext context) {
     _chatService = ChatService();
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.lightGreen,
         title: Text("Chat with: ${widget.peer['name']}"),
       ),
       body: SafeArea(
@@ -59,6 +69,20 @@ class _ChatScreenState extends State<ChatScreen> {
                       },
                     );
                   },
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _predefinedMessages.map((message) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await _chatService.sendMessage(widget.peer, message);
+                      },
+                      child: Text(message),
+                    ),
+                  )).toList(),
                 ),
               ),
               Padding(
