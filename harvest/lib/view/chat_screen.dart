@@ -1,7 +1,5 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../model/message.dart';
 import 'message_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,11 +23,21 @@ class _ChatScreenState extends State<ChatScreen> {
   late ChatService _chatService;
   final currentUser = FirebaseAuth.instance.currentUser;
 
+  final List<String> _predefinedMessages = [
+    'Hi, thanks for reaching out!',
+    'What are the store hours',
+    'Do you have any specials today!',
+    'What is your return policy?',
+    'Do you offer delivery?',
+    'Thank You!',
+  ];
+
   @override
   Widget build(BuildContext context) {
     _chatService = ChatService();
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.lightGreen,
         title: Text("Chat with: ${widget.peer['name']}"),
       ),
       body: SafeArea(
@@ -40,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: StreamBuilder<List<Message>>(
                   stream: _chatService.getMessages(widget.peer),
-                  builder: (context, snapshot){
+                  builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       print("all messages snapshot error: ${snapshot.error}");
                       return Center(child: Text('Error: ${snapshot.error}'));
@@ -54,17 +62,32 @@ class _ChatScreenState extends State<ChatScreen> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final message = messages[index];
-                        final isSent=
+                        final isSent =
                             message.senderId == _auth.currentUser!.uid;
 
-                        return MessageWidget(message:  message, isSent: isSent);
+                        return MessageWidget(message: message, isSent: isSent);
                       },
                     );
                   },
                 ),
               ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _predefinedMessages.map((message) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await _chatService.sendMessage(widget.peer, message);
+                      },
+                      child: Text(message),
+                    ),
+                  )).toList(),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 child: Column(
                   children: [
                     Row(
