@@ -3,6 +3,8 @@ import '../domain/topic_message_request.dart';
 import '../controller/messaging_controller.dart';
 
 class NotificationPage extends StatefulWidget {
+  const NotificationPage({super.key});
+
   @override
   _NotificationPageState createState() => _NotificationPageState();
 }

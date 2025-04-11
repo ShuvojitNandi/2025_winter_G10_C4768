@@ -11,7 +11,6 @@ import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 import '../controller/messaging_controller.dart' as messaging_controller;
 
-import '../model/vendor_model.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.currentUser});

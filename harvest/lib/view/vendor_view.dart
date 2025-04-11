@@ -220,7 +220,7 @@ class _VendorViewPageState extends State<VendorViewPage>
                                     value: category.id,
                                     child: Text(category.name),
                                   );
-                                }).toList(),
+                                }),
                               ],
                               onChanged: (value) {
                                 setState(() {
@@ -271,8 +271,9 @@ class _VendorViewPageState extends State<VendorViewPage>
                                     fit: BoxFit.cover,
                                     loadingBuilder:
                                         (context, child, loadingProgress) {
-                                      if (loadingProgress == null)
+                                      if (loadingProgress == null) {
                                         return child;
+                                      }
                                       return Container(
                                         width: 50,
                                         height: 50,
