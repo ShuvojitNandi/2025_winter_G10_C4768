@@ -40,9 +40,8 @@ class VendorService {
     return vendorCollection
         .where(FieldPath.documentId, whereIn: vendorIds)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Vendor.fromMap(doc)).toList();
-    });
+        .map((snapshot) => snapshot.docs.map((doc) =>Vendor.fromMap(doc)).toList())
+        .asBroadcastStream();
   }
 
   Stream<List<String>> getVendorIds() {

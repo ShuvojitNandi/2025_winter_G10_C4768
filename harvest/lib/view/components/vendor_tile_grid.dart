@@ -28,6 +28,7 @@ class VendorTileGrid extends StatefulWidget {
 }
 
 bool matchBetween(String query, String text) {
+  if (text == null) return false;
   int queryIndex = 0;
   int textIndex = 0;
 
@@ -60,7 +61,7 @@ class _VendorTileGridState extends State<VendorTileGrid> {
 
           List<Vendor> vendorsToDisplay = (snapshot.data ?? []);
           vendorsToDisplay.retainWhere((vendor) {
-            return matchBetween(widget.filter, vendor.vendor_name);
+            return vendor.vendor_name != null && matchBetween(widget.filter, vendor.vendor_name);
           });
 
           return vendorsToDisplay.isEmpty
@@ -77,7 +78,7 @@ class _VendorTileGridState extends State<VendorTileGrid> {
                   itemCount: vendorsToDisplay.length,
                   itemBuilder: (context, index) {
                     return VendorTile(
-                        vendor: vendorsToDisplay[index], customer: widget.customer, customerID: widget.customerId);
+                        vendor: vendorsToDisplay[index], customer: widget.customer, customerID: widget.customerId ?? '');
                   },
                 );
         });
