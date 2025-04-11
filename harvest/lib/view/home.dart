@@ -169,10 +169,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     label: 'Vendors',
                   ),
                   NavigationDestination(
-                    icon: Badge(
-                      label: Text('0'),
-                      child: Icon(Icons.messenger_sharp),
-                    ),
+                    icon: Icon(Icons.messenger_sharp),
                     label: 'Messages',
                   ),
                   NavigationDestination(
