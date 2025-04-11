@@ -105,14 +105,25 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 Tab(text: "Your Shops"),
               ]),
             ),
+
             endDrawer: Drawer(child: profileDrawer()),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
               child: TabBarView(controller: _tabController, children: [userPage(), vendorPage()]),
             ),
-            bottomNavigationBar: SizedBox(
-              height: 80,
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.green.shade300, // Line color
+                    width: 1.0, // Line thickness
+                  ),
+                ),
+              ),
               child: NavigationBar(
+                height: 60,
+                 // Background color
+                elevation: 5,
                 onDestinationSelected: (int index) async {
                   setState(() {
                     _selectedIndex = index;
@@ -149,6 +160,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   }
                 },
                 indicatorColor: Colors.lightGreen,
+
                 selectedIndex: _selectedIndex,
                 destinations: const <Widget>[
                   NavigationDestination(

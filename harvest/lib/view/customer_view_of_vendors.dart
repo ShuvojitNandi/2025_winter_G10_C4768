@@ -4,6 +4,7 @@ import 'package:harvest/model/vendor_model.dart';
 import 'package:harvest/controller/cart_controller.dart';
 import 'package:harvest/model/cart_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class CustomerVendorPage extends StatefulWidget {
   final String vendorId;
@@ -26,7 +27,7 @@ class _CustomerVendorPageState extends State<CustomerVendorPage> {
   String? _selectedCategoryId = '';
   List<VendorProduct> _vendorProducts = [];
   List<CartItem> _existingCartItems = [];
-
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final VendorProductController _vendorProductController = VendorProductController();
   final CategoryService _categoryService = CategoryService();
   final CartController _cartController = CartController();
@@ -58,9 +59,41 @@ class _CustomerVendorPageState extends State<CustomerVendorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text("Welcome to ${widget.vendorName}"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.lightGreen),
+              child: Text('Options',
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
+            ListTile(
+              title: Text('Store Info'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          vendorinfo(vendorId: widget.vendorId)),
+                );
+              },
+            ),
+
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -124,6 +157,148 @@ class _CustomerVendorPageState extends State<CustomerVendorPage> {
 }
 
 
+class vendorinfo extends StatefulWidget{
+  final String vendorId;
+  const vendorinfo({super.key, required this.vendorId});
+  @override
+  State<vendorinfo> createState() => _vendorinfoState();
+}
+
+class _vendorinfoState extends State<vendorinfo> {
+  static const String _defaultImageUrl = 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740';
+  final _vendorService = VendorService();
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+
+      body: StreamBuilder<Vendor?>(
+        stream: _vendorService.getVendor(widget.vendorId),
+        builder: (context, vendorSnapshot) {
+          if (!vendorSnapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+          final vendor = vendorSnapshot.data!;
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Image.network(
+                    vendor.store_img.isNotEmpty
+                        ? vendor.store_img
+                        : "https://sjfm.ca/wp-content/uploads/2018/07/FarmersMarketLauchLogo.jpg",
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Placeholder(),
+                  ),
+                  title: Text(
+                    vendor.vendor_name,
+                    style: TextStyle(color: Colors.white, shadows: [
+                      Shadow(color: Colors.black, offset: Offset(2, 2), blurRadius: 4),
+                    ]),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Card(
+                    elevation: 3,
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow(Icons.person, vendor.vendor_name),
+                          _buildInfoRow(Icons.email, vendor.email),
+                          _buildInfoRow(Icons.phone, vendor.phone),
+                          if (vendor.website != null)
+                            _buildInfoRow(Icons.link, vendor.website!),
+                          if (vendor.facebook != null)
+                            _buildInfoRow(Icons.facebook, vendor.facebook!),
+                          SizedBox(height: 12),
+                          Text("About", style: Theme.of(context).textTheme.titleMedium),
+                          Text(vendor.store_descrip ?? "No description provided"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Card(
+                    elevation: 3,
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Contract Dates",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          if (vendor.conf_dates == null || vendor.conf_dates!.isEmpty)
+                            Text("No contract dates available"),
+                          if (vendor.conf_dates != null && vendor.conf_dates!.isNotEmpty)
+                            Column(
+                              children: vendor.conf_dates!.map((date) => Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      _formatDate(date), // Use date formatting function
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              )).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[600]),
+          SizedBox(width: 10),
+          Flexible(child: Text(text)),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, yyyy').format(date); // Requires 'intl' package
+    } catch (e) {
+      return dateString; // Fallback to raw string if parsing fails
+    }
+  }
+}
 
 class ProductCard extends StatefulWidget {
   final VendorProduct product;
