@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:harvest/controller/vendor_service.dart';
 import 'package:image_picker/image_picker.dart';
-import '../controller/vendor_service.dart';
 import '../controller/review_controller.dart';
 import '../model/vendor_model.dart';
 import '../model/product_review.dart';
@@ -11,11 +11,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AllVendorProductsPage extends StatefulWidget {
   final String userId;
   final String userName;
+  // If provided, show only these products for review.
+  final List<String>? purchasedProductIds;
 
   const AllVendorProductsPage({
     super.key,
     required this.userId,
     required this.userName,
+    this.purchasedProductIds,
   });
 
   @override
@@ -35,32 +38,56 @@ class _AllVendorProductsPageState extends State<AllVendorProductsPage> {
     _fetchProducts();
   }
 
-  
   Future<void> _fetchProducts() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final products = await _vendorProductController.getAllVendorProducts(currentUser!.uid);
-    final Map<String, List<VendorProduct>> grouped = {};
-
-    for (var product in products) {
-      grouped.putIfAbsent(product.vendorId, () => []).add(product);
-    }
-
-    
-    final vendors = <MapEntry<String, Vendor>>[];
-    for (var id in grouped.keys) {
-      final vendor = await _vendorService.getVendor(id).first;
-      if (vendor != null) vendors.add(MapEntry(id, vendor));
-    }
-
-    if (mounted) {
-      setState(() {
-        _groupedProducts = grouped;
-        _vendorDetails = Map.fromEntries(vendors);
-      });
+    if (widget.purchasedProductIds != null && widget.purchasedProductIds!.isNotEmpty) {
+      // Fetch only the purchased products.
+      List<VendorProduct> products = [];
+      for (String prodId in widget.purchasedProductIds!) {
+        final product = await _vendorProductController.getVendorProductByProductId(prodId);
+        if (product != null) {
+          products.add(product);
+        }
+      }
+      // Group the products by vendor id.
+      final Map<String, List<VendorProduct>> grouped = {};
+      for (var product in products) {
+        grouped.putIfAbsent(product.vendorId, () => []).add(product);
+      }
+      // Fetch vendor details.
+      final vendors = <MapEntry<String, Vendor>>[];
+      for (var id in grouped.keys) {
+        final vendor = await _vendorService.getVendor(id).first;
+        if (vendor != null) vendors.add(MapEntry(id, vendor));
+      }
+      if (mounted) {
+        setState(() {
+          _groupedProducts = grouped;
+          _vendorDetails = Map.fromEntries(vendors);
+        });
+      }
+    } else {
+      // Fallback: fetch all products linked to the current user.
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final products = await _vendorProductController.getAllVendorProducts(currentUser!.uid);
+      final Map<String, List<VendorProduct>> grouped = {};
+      for (var product in products) {
+        grouped.putIfAbsent(product.vendorId, () => []).add(product);
+      }
+      final vendors = <MapEntry<String, Vendor>>[];
+      for (var id in grouped.keys) {
+        final vendor = await _vendorService.getVendor(id).first;
+        if (vendor != null) vendors.add(MapEntry(id, vendor));
+      }
+      if (mounted) {
+        setState(() {
+          _groupedProducts = grouped;
+          _vendorDetails = Map.fromEntries(vendors);
+        });
+      }
     }
   }
 
-  
+  // Reuse your review dialog code from your original implementation.
   void _showReviewDialog(BuildContext context, VendorProduct product) {
     showDialog(
       context: context,
@@ -80,82 +107,84 @@ class _AllVendorProductsPageState extends State<AllVendorProductsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text("Review Your Purchased Products"),
         backgroundColor: Colors.deepPurple[400],
-        title: const Text("All Vendor Products"),
       ),
       body: _groupedProducts.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: _groupedProducts.entries.map((entry) {
-                final vendor = _vendorDetails[entry.key];
-                final products = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        vendor?.vendor_name ?? 'Vendor',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              children: [
+                ..._groupedProducts.entries.map((entry) {
+                  final vendor = _vendorDetails[entry.key];
+                  final products = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          vendor?.vendor_name ?? 'Vendor',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(thickness: 2),
+                        ...products.map((product) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Image.network(
+                                      (product.imageUrl != null && product.imageUrl!.trim().isNotEmpty)
+                                          ? product.imageUrl!
+                                          : 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740',
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                      child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(product.productName, style: const TextStyle(fontSize: 16)),
+                                      Text("${product.quantity}${product.unit}"),
+                                      Text("Price: \$${product.price}"),
+                                    ],
+                                  )),
+                                  ElevatedButton(
+                                    onPressed: () => _showReviewDialog(context, product),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.purple,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text("Rate this"),
+                                  ),
+                                ],
+                              ),
+                            ))
+                      ],
+                    ),
+                  );
+                }).toList(),
+                // Done button at the bottom – shows only when reviewing purchased products.
+                if (widget.purchasedProductIds != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple[400],
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
                       ),
-                      const Divider(thickness: 2),
-                      ...products.map((product) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: Image.network(
-                                    (product.imageUrl != null && product.imageUrl!.trim().isNotEmpty)
-                                        ? product.imageUrl!
-                                        : 'https://img.freepik.com/premium-vector/fresh-vegetable-logo-design-illustration_1323048-66973.jpg?w=740',
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        width: 50,
-                                        height: 50,
-                                        alignment: Alignment.center,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          value: loadingProgress.expectedTotalBytes != null
-                                              ? loadingProgress.cumulativeBytesLoaded /
-                                                  loadingProgress.expectedTotalBytes!
-                                              : null,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(product.productName, style: const TextStyle(fontSize: 16)),
-                                        Text("${product.quantity}${product.unit}"),
-                                        Text("Price: \$${product.price}"),
-                                      ],
-                                    )
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => _showReviewDialog(context, product),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.purple,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text("Rate this"),
-                                ),
-                              ],
-                            ),
-                          ))
-                    ],
+                      child: const Text("DONE"),
+                    ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
     );
   }
@@ -185,29 +214,25 @@ class _ReviewDialogContentState extends State<_ReviewDialogContent> {
   int _rating = 3;
   File? _image;
   bool _uploading = false;
-
   final ImagePicker _picker = ImagePicker();
-  final String _defaultImage = 'https://cdn0.iconfinder.com/data/icons/remoji-soft-1/512/emoji-thumbs-up-smile.png';
+  final String _defaultImage =
+      'https://cdn0.iconfinder.com/data/icons/remoji-soft-1/512/emoji-thumbs-up-smile.png';
 
-  
   Future<void> _pickImage() async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
     if (file != null) setState(() => _image = File(file.path));
   }
 
- 
   Future<void> _submitReview() async {
     setState(() => _uploading = true);
     final reviewId = DateTime.now().millisecondsSinceEpoch.toString();
     String? imageUrl;
-
     if (_image != null) {
       imageUrl = await widget.reviewController.uploadReviewImage(_image!, reviewId);
     }
-
     final review = Review(
       reviewId: reviewId,
-      vendorProductId: widget.product.id!,  
+      vendorProductId: widget.product.id!,
       vendorId: widget.product.vendorId,
       userId: widget.userId,
       userName: widget.userName,
@@ -216,16 +241,13 @@ class _ReviewDialogContentState extends State<_ReviewDialogContent> {
       imageUrl: imageUrl,
       timestamp: Timestamp.now(),
     );
-
     await widget.reviewController.addReview(review);
-
     if (mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Review submitted to ${widget.vendorName}')),
       );
     }
-
     setState(() => _uploading = false);
   }
 

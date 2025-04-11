@@ -4,11 +4,13 @@ import 'package:harvest/controller/cart_controller.dart';
 import 'package:harvest/controller/vendor_service.dart';
 import 'package:harvest/model/cart_model.dart';
 import 'package:harvest/model/vendor_model.dart';
+import 'after_payment_review.dart';
 
 class CartPage extends StatefulWidget {
   final String userId;
+  final String userName;
 
-  const CartPage({super.key, required this.userId});
+  const CartPage({super.key, required this.userId, required this.userName});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -31,16 +33,13 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-
-
   Future<String> _getVendorName(String vendorId) async {
-  final doc = await FirebaseFirestore.instance.collection('vendors').doc(vendorId).get();
-  if (doc.exists) {
-    return doc['vendor_name'] ?? vendorId;
+    final doc = await FirebaseFirestore.instance.collection('vendors').doc(vendorId).get();
+    if (doc.exists) {
+      return doc['vendor_name'] ?? vendorId;
+    }
+    return vendorId;
   }
-  return vendorId;
-}
-
 
   Future<void> _editQuantityDialog(CartItem item) async {
     int newQty = item.quantity;
@@ -80,7 +79,6 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-
   Future<void> _placeOrder(List<CartItem> vendorItems) async {
     for (final item in vendorItems) {
       final product = await _vendorProductController.getVendorProductByProductId(item.productId);
@@ -94,9 +92,49 @@ class _CartPageState extends State<CartPage> {
       }
       await _cartController.markItemAsPaid(item.id!);
     }
-    _refreshCart();
+    await _refreshCart();
+
+   
+    final String vendorId = vendorItems.first.vendorId;
+    final List<String> purchasedProductIds = vendorItems.map((item) => item.productId).toList();
+
+    await _showReviewDialog(vendorId, purchasedProductIds);
   }
 
+  Future<void> _showReviewDialog(String vendorId, List<String> purchasedProductIds) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false, 
+      builder: (context) => AlertDialog(
+        content: const Text("Can you please spare a minute to review the products you just purchased?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AllVendorProductsPage(
+                    userId: widget.userId,
+                    userName: widget.userName,
+                    purchasedProductIds: purchasedProductIds,
+                  ),
+                ),
+              );
+            },
+            child: const Text("Yes"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/'); // back to homepage
+            },
+            child: const Text("No"),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildProductRow(CartItem item) {
     return FutureBuilder<VendorProduct?>(
@@ -149,7 +187,6 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,15 +218,15 @@ class _CartPageState extends State<CartPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         FutureBuilder<String>(
-                            future: _getVendorName(vendorId),
-                            builder: (context, vendorSnapshot) {
-                              final name = vendorSnapshot.data ?? vendorId;
-                              return Text(
-                                "Vendor: $name",
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              );
-                            },
-                          ),
+                          future: _getVendorName(vendorId),
+                          builder: (context, vendorSnapshot) {
+                            final name = vendorSnapshot.data ?? vendorId;
+                            return Text(
+                              "Vendor: $name",
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            );
+                          },
+                        ),
                         const Divider(),
                         ...items.map(_buildProductRow),
                         const Divider(),
@@ -202,7 +239,7 @@ class _CartPageState extends State<CartPage> {
                               onPressed: () => _placeOrder(items),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
-                                foregroundColor: Colors.white, 
+                                foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
                               ),
                               child: const Text("PLACE ORDER"),

@@ -6,7 +6,6 @@ import 'package:harvest/controller/vendor_service.dart';
 import 'package:harvest/view/components/user_profile.dart';
 import 'package:harvest/view/components/vendor_tile_grid.dart';
 import '../controller/user_controller.dart';
-import 'all_vendor_products.dart';
 import 'vendor_registration.dart';
 import 'chat_home_screen.dart';
 import '../controller/messaging_controller.dart' as messaging_controller;
@@ -150,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CartPage(userId: userId!),
+                        builder: (context) => CartPage(userId: userId!, userName: userName!),
                       ),
                     );
                     setState(() {
@@ -262,15 +261,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         const SizedBox(height: 6),
         TextButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AllVendorProductsPage(
-                  userId: widget.currentUser!.uid,
-                  userName: userName ?? 'User',
-                ),
-              ),
-            );
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => AllVendorProductsPage(
+            //       userId: widget.currentUser!.uid,
+            //       userName: userName ?? 'User',
+            //     ),
+            //   ),
+            // );
           },
           child: const Text(
             'Explore All Vendors',
